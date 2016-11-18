@@ -164,8 +164,8 @@
     :or   {width 20}
     :as   node}]
   (comp (layout-row node)
-        #_(ipose #_(drag-x-source node)
-               #_(layout-resize-element node)
+        (ipose (drag-x-source node)
+               (layout-resize-element node)
                (style :width width
                       :backgroundColor "green"))))
 
@@ -176,8 +176,8 @@
     :or   {width 20}
     :as   node}]
   (comp (layout-column node)
-        (ipose #_(drag-x-source node)
-               #_(layout-resize-element node)
+        (ipose (drag-x-source node)
+               (layout-resize-element node)
                (style :width width
                       :backgroundColor "black")
                (layout-column node))))
