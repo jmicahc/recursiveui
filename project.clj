@@ -19,18 +19,16 @@
 
   :profiles
   {:dev
-   {:dependencies [
-                   [figwheel-sidecar "0.5.8"]
+   {:dependencies [[figwheel-sidecar "0.5.8"]
                    [com.cemerick/piggieback "0.2.1"]]
 
     :plugins      [[lein-figwheel "0.5.8"]
-                   [cider/cider-nrepl "0.13.0"]]
-    }}
+                   [cider/cider-nrepl "0.13.0"]]}}
 
   :cljsbuild
   {:builds
    [{:id           "dev"
-     :source-paths ["src/cljs"]
+     :source-paths ["src/cljs" "test/cljs"]
      :figwheel     {:on-jsload "recursiveui.core/reload"}
      :compiler     {:main                 recursiveui.core
                     :optimizations        :none

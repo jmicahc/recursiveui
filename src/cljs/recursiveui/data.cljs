@@ -11,39 +11,43 @@
 
 (def state
   (reagent/atom
-   {:tags [:layout/root :style/root]
+   {:tags [:structure/flex-root :structure/style]
     :layout/partition :column
-    :layout/term :var
+    :layout/variable? true
     :id 1
-    :style/width 500
-    :style/height 700
-    :style/top 0
-    :style/left 0
+    :layout/width 500
+    :layout/height 700
+    :layout/top 0
+    :layout/left 0
     :style/backgroundColor "red"
-    :children [{:tags [:layout/row :style/root]
+    :children [{:tags [:structure/flex-row
+                       :structure/style]
                 :id 2
                 :layout/partition :row
                 :layout/magnitude 100
-                :layout/term :var
+                :layout/variable? true
                 :layout-resize-element/backgroundColor "red"
                 :style/backgroundColor "green"
-                :children [{:tags [:layout/column :style/root]
+                :children [{:tags [:structure/flex-column
+                                   :structure/style]
                             :layout/partition :column
-                            :layout/term :constant
+                            :layout/variable? false
                             :id 4
                             :layout/magnitude 200
                             :style/backgroundColor "blue"}
-                           {:tags [:layout/column :style/root]
+                           {:tags [:structure/flex-column
+                                   :structure/style
+                                   :structure/sidebar-right]
                             :id 5
                             :layout/partition :column
                             :layout/magnitude 300
-                            :layout/term :var
+                            :layout/variable? true
                             :style/backgroundColor "grey"}]}
-               {:tags [:layout/row :event/root :style/root]
-                :layout-resize-element/backgroundColor "red"x
+               {:tags [:structure/flex-row :event/root :structure/style]
+                :layout-resize-element/backgroundColor "red"
                 :layout/partition :row
                 :layout/magnitude 600
                 :style/backgroundColor "orange"
                 :id 3
-                :layout/term :var}]}))
+                :layout/variable? true}]}))
 

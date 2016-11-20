@@ -1,5 +1,8 @@
 (ns recursiveui.command
-  (:require [recursiveui.data :as data]))
+  (:require [recursiveui.data :as data]
+            [recursiveui.util :refer [map-paths]]
+            [cljs.pprint :refer [pprint]]))
+
 
 
 
@@ -17,85 +20,81 @@
 (defn width-equations
   ([{:keys [layout/magnitude
             layout/partition
-            layout/term
+            layout/variable?
             children]
      :as node}]
    (if (= partition :column)
      (if magnitude
-       (if (= term :var) [[node]] [[]])
-       (into [] cat (map width-equations children)))
-     (product (map width-equations children)))))
+       (if variable? [[node]] [[]])
+       (into [] cat (map-paths width-equations node)))
+     (product (map-paths width-equations node)))))
 
 
 
 (defn height-equations
   ([{:keys [layout/magnitude
             layout/partition
-            layout/term
-            children]
+            layout/variable?]
      :as node}]
    (if (= partition :row)
      (if magnitude
-       (if (= term :var) [[node]] [[]])
-       (into [] cat (map height-equations children)))
-     (product (map height-equations children)))))
-
-
-
-(defn solve-equation
-  [eq delta]
-  (let [freq (count eq)
-        x    (/ delta freq)]
-    (mapv (fn [term] (update term :layout/magnitude + x)) eq)))
-
+       (if variable? [[node]] [[]])
+       (into [] cat (map-paths height-equations node)))
+     (product (map-paths height-equations node)))))
 
 
 (defn solve-equations
   [eqs dx]
-  (mapv (fn [eq] (solve-equation eq dx)) eqs))
-
-
-
-(defn equation->tree
-  [[term & terms] node]
-  (if term
-    (recur terms (assoc-in node (:path term) term))
-    node))
+  (letfn [(solve-equation [eq delta]
+            (let [freq (count eq)
+                  x    (/ delta freq)]
+              (mapv (fn [term] (update term :layout/magnitude + x)) eq)))]
+    (mapv (fn [eq] (solve-equation eq dx)) eqs)))
 
 
 
 (defn equations->tree
   [[eq & eqs] node]
-  (if eq (recur eqs (equation->tree eq node)) node))
+  (letfn [(equation->tree [[term & terms] node]
+            (if term
+              (recur terms (assoc-in node (:path term) term))
+              node))]
+    (if eq (recur eqs (equation->tree eq node)) node)))
 
 
 
 (defn update-row
   [node dx]
-  (->
-   (width-equations node)
-   (solve-equations dx)
-   (equations->tree node)))
+  (-> (width-equations node)
+      (solve-equations dx)
+      (equations->tree node)))
 
 
 
 (defn update-column
   [node dy]
-  (->
-   (height-equations node)
-   (solve-equations dy)
-   (equations->tree node)))
+  (-> (height-equations node)
+      (solve-equations dy)
+      (equations->tree node)))
 
 
 
-(defn update-grid
+(defn update-layout-size
   [node dx dy]
   (-> (update-row node dx)
       (update-column dy)))
 
 
-(defn window-width [] (.-innerWidth js/window))
-(defn window-height [] (.-innerHeight js/window))
+
+(defn update-layout-root-size
+  [{:keys [layout/width
+           layout/height]
+    :as node} dx dy]
+  (update-layout-size (assoc node
+                             :layout/width (+ dx width)
+                             :layout/height (+ dy height))
+                      dx
+                      dy))
 
 
 
@@ -111,30 +110,16 @@
 
 
 
-(defn merge-children [a b]
-  (apply update a :children conj (:children b)))
-
-
-
-(defn resize-grid
-  [{:keys [path] :as node} dx dy]
-  (let [parent (get-in @data/state (-> path pop pop))
-        index (pop path)
+(defn resize-grid 
+  [{:keys [node delta/dx delta/dy] :as m}]
+  (let [parent (get-in @data/state (-> (:path node) pop pop))
+        index (peek (:path node))
         left-subtree (subtree parent 0 index)
-        right-subtree (subtree parent index)]
-    (merge-children (update-grid left-subtree dx dy)
-                    (update-grid right-subtree (- dx) (- dy)))))
-
-
-
-
-(defn init-paths
-  ([node] (init-paths [] node))
-  ([path {:keys [children] :as node}]
-   (assoc node
-          :path path
-          :children (mapv (fn [idx child]
-                            (init-paths (conj path :children idx)
-                                        child))
-                          (range)
-                          children))))
+        right-subtree (subtree parent index)
+        resized-left (update-layout-size left-subtree 0 dy)
+        resized-right (update-layout-size right-subtree 0 (- dy))]
+    (swap! data/state
+           assoc
+           :children
+           (into (:children resized-left)
+                 (:children resized-right)))))
