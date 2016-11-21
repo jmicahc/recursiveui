@@ -9,6 +9,7 @@
      (comp (attr :class "layout-row")
            (style :height magnitude
                   :display "flex"
+                  :position "relative"
                   :flexDiretion "row")))})
 
 
@@ -20,6 +21,7 @@
      (comp (attr :class "layout-column")
            (style :width magnitude
                   :display "flex"
+                  :position "relative"
                   :flexDirection "column")))})
 
 
@@ -41,42 +43,69 @@
 
 
 
+
+
 (def sidebar-left
   {:render
    (fn [{:keys [side-bar/backgroundColor
                 side-bar/opacity
                 side-bar/width]
          :or {width "15px"
-              backgroundColor "brown
-"
+              backgroundColor "brown"
               opacity 1}
          :as node}]
-     (comp (attr :class "side-bar")
+     (comp (attr :class "sidebar-left")
            (style :backgroundColor backgroundColor
+                  :position "absolute"
+                  :top "0px"
+                  :left "0px"
                   :width width
                   :height "100%"
                   :opacity opacity)))})
 
 
 
-(def sidebar-right
+(def sidebar-top
   {:render
    (fn [{:keys [side-bar/backgroundColor
                 side-bar/opacity
-                side-bar/width]
-         :or {width "12px"
+                side-bar/height]
+         :or {height "12px"
               backgroundColor "#1D1D2A"
               opacity 0.7}
          :as node}]
-     (comp (attr :class "side-bar")
+     (comp (attr :class "sidebar-top")
            (style :backgroundColor backgroundColor
-                  :position "relative"
-                  :width width
-                  :right "6px"
-                  :height "100%"
+                  :position "absolute"
+                  :left "0px"
+                  :top "0px"
+                  :height height
+                  :botttom "6px"
+                  :width "100%"
                   :opacity opacity)))})
 
 
+
+
+(def layout-sidebar
+  {:render
+   (fn [{:keys [layout/partition] :as node}]
+     (comp (if (= partition :column)
+             ((:render sidebar-left) node)
+             ((:render sidebar-top) node))
+           (attr :class "layout-sidebar")))})
+
+
+
+
+
+(def border
+  "temporary"
+  {:render
+   (fn [node]
+     (println "hello?")
+     (style :border "solid"
+            :borderColor "#181319"))})
 
 
 (def style-element
