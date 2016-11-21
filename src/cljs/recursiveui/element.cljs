@@ -1,7 +1,9 @@
 (ns recursiveui.element)
 
 
-(def base-element [:div {}])
+(def base-element [:div {}
+                   [:div {:id "canvas"}]])
+
 
 
 (defn attr
@@ -29,22 +31,6 @@
 
 
 
-(defn conjoin [f & fs]
-  (let [g (apply comp f fs)]
-    (fn [elem]
-      (conj elem (g base-element)))))
-
-
-
-(defn ipose [f & fs]
-  (let [x ((apply comp f fs) base-element)]
-    (fn [elem]
-      (into (subvec elem 0 2)
-            (interpose x)
-            (subvec elem 2)))))
-
-
-
 (defn on [k f & kfs]
   (let [event-fn (fn [e] (if (map? e) e {:event e}))
         fs (cons f (take-nth 2 (next kfs)))
@@ -53,3 +39,29 @@
         event-map (apply assoc {} (interleave ks event-fns))]
     (fn [elem]
       (update elem 1 merge event-map))))
+
+
+
+
+
+(defn conjoin [c & cs]
+  {:render (fn [node]
+             (let [f (transduce (map #((% :render identity) node)) comp (list* c cs))
+                   x (f base-element)]
+               (fn [elem] (conj elem x))))
+   
+   :init (transduce (map #(% :init identity)) comp (list* c cs))})
+
+
+
+
+(defn ipose [c & cs]
+  {:render (fn [node]
+             (let [f (transduce (map #((% :render identity) node)) comp (list* c cs))
+                   x (f base-element)]
+               (fn [elem]
+                 (into (subvec elem 0 2)
+                       (interpose x)
+                       (subvec elem 2)))))
+   
+   :init (transduce (map #(% :init identity)) comp (list* c cs))})

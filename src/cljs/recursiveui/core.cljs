@@ -3,11 +3,12 @@
             [recursiveui.data :as data]
             [recursiveui.event :as event]
             [recursiveui.command :as command
-             :refer [resize-grid]]
-            [recursiveui.util :refer [map-paths]]
+             :refer [layout-resize-height]]
+            [recursiveui.util :refer [with-paths]]
             [recursiveui.structure :as structure]
             [recursiveui.element :as elem :refer [base-element]]
             [recursiveui.signal :as signal]
+            [recursiveui.component :as component]
             [cljs.core.async :refer [chan <! >! take! mult put!]]
             [goog.dom :as gdom]
             [goog.events :as gevents]
@@ -22,13 +23,14 @@
 
 (defn tag->fn [tag]
   (case tag
-    :structure/flex-root          structure/flex-root
-    :structure/flex-row           structure/flex-row
-    :structure/flex-column        structure/flex-column
-    :structure/style              structure/style-element
-    :structure/sidebar-left       structure/sidebar-left
-    :structure/sidebar-right      structure/sidebar-right
-    :event/root                   event/delta))
+    :structure/flex-root            structure/flex-root
+    :structure/flex-row             structure/flex-row
+    :structure/flex-column          structure/flex-column
+    :structure/style                structure/style-element
+    :structure/sidebar-left         structure/sidebar-left
+    :structure/sidebar-top          structure/sidebar-top
+    :structure/border               structure/border
+    :component/resize-layout        component/resize-layout))
 
 
 
@@ -40,19 +42,8 @@
                                (f node))))
                       comp
                       tags)]
-     (f (into base-element (map-paths render node))))))
+     (f (into base-element (with-paths (map render) node))))))
 
-
-(defn init-paths
-  ([node] (init-paths [] node))
-  ([path {:keys [children] :as node}]
-   (assoc node
-          :path path
-          :children (mapv (fn [idx child]
-                            (init-paths (conj path :children idx)
-                                        child))
-                          (range)
-                          children))))
 
 
 (defn init
@@ -97,7 +88,7 @@
          (fn [{:keys [layout/width
                       layout/height]
                :as root-node}]
-           (command/update-layout-root-size
+           (command/layout-update-root-size
             root-node
             (- (window-width) width)
             (- (window-height) height)))))

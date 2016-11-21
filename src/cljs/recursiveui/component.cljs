@@ -1,13 +1,21 @@
 (ns recursiveui.component
   (:require [recursiveui.event :as event]
             [recursiveui.structure :as structure]
-            [recursiveui.command :as command]))
+            [recursiveui.element :as element]))
 
 
 
 
-#_(defn resizable-layout-row [node]
-  (merge-with comp
-              (structure/flex-row node)
-              (structure/sidebar-left node)
-              (action )))
+(def resize-bar-top
+  (element/conjoin structure/sidebar-top
+                   event/delta-y))
+
+
+(def resize-bar-left
+  (element/conjoin structure/layout-sidebar
+                   event/delta-x))
+
+
+(def resize-layout
+  (element/conjoin structure/layout-sidebar
+                   event/layout-resize-delta))
