@@ -98,7 +98,7 @@
                                         :layout/partition :column
                                         :layout/magnitude 150
                                         :layout/active? true
-                                        :layout/variable? true
+                                        :layout/variable? false
                                         :layout/inner? true
                                         :style/backgroundColor "grey"}
                                        {:tags [:structure/flex-column

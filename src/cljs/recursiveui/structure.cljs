@@ -27,6 +27,8 @@
 
 
 
+
+
 (def flex-root
   {:render
    (fn [{:keys [layout/width layout/height
@@ -88,13 +90,14 @@
 
 
 (def layout-sidebar
-  {:render
-   (fn [{:keys [layout/partition] :as node}]
-     (comp (if (= partition :column)
-             ((:render sidebar-left) node)
-             ((:render sidebar-top) node))
-           (attr :class "layout-sidebar")))})
-
+  (let [render-sidebar-left (:render sidebar-left)
+        render-sidebar-top  (:render sidebar-top)]
+    {:render
+     (fn [{:keys [layout/partition] :as node}]
+       (comp (if (= partition :column)
+               (render-sidebar-left node)
+               (render-sidebar-top node))
+             (attr :class "layout-sidebar")))}))
 
 
 
@@ -103,9 +106,9 @@
   "temporary"
   {:render
    (fn [node]
-     (println "hello?")
      (style :border "solid"
             :borderColor "#181319"))})
+
 
 
 (def style-element

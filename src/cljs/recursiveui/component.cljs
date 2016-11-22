@@ -11,11 +11,20 @@
                    event/delta-y))
 
 
+
+
+
 (def resize-bar-left
   (element/conjoin structure/layout-sidebar
                    event/delta-x))
 
 
+
+
 (def resize-layout
   (element/conjoin structure/layout-sidebar
                    event/layout-resize-delta))
+
+
+
+

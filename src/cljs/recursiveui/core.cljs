@@ -84,14 +84,13 @@
 
 
 (defn window-listener [e]
-  (swap! data/state
-         (fn [{:keys [layout/width
-                      layout/height]
-               :as root-node}]
-           (command/layout-update-root-size
-            root-node
-            (- (window-width) width)
-            (- (window-height) height)))))
+  (let [{:keys [layout/width
+                layout/height]
+         :as root} @data/state]
+    (command/update! command/layout-resize-root 
+                     {:node root
+                      :delta/dx (- (window-width) width)
+                      :delta/dy (- (window-height) height)})))
 
 (gevents/unlisten js/window "resize" window-listener)
 (gevents/listen js/window "resize" window-listener)

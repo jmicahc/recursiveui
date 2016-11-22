@@ -9,6 +9,7 @@
 
 
 
+
 (defn delta-event-fn [{:keys [event node] :as m}]
   (let [x (.-clientX event)
         y (.-clientY event)
@@ -21,6 +22,7 @@
 
 
 
+
 (defn on [k f & kfs]
   (fn [node]
     (let [event-fn (fn [e] (if (map? e) e {:event e :node node}))
@@ -30,6 +32,7 @@
           event-map (apply assoc {} (interleave ks event-fns))]
       (fn [elem]
         (update elem 1 merge event-map)))))
+
 
 
 
@@ -54,6 +57,7 @@
    :destruct (fn [node] (dissoc node :delta/prev))})
 
 
+
 (def delta-x
   {:init (fn [node] (assoc node :delta/prev (atom [0 0])))
    :render (fn [node]
@@ -72,16 +76,21 @@
                        (reset! (:delta/prev node) [(.-clientX e) (.-clientY e)])
                        (listen js/window "mouseup" unlisten-f)
                        (listen js/window "mousemove" drag-listener)))))
-   
+
+
    :destruct (fn [node] (dissoc node :delta/prev))})
+
+
 
 
 
 (def layout-resize-delta
   {:init (fn [node] (assoc node :delta/prev (atom [0 0])))
+
    :render (fn [{:keys [layout/partition] :as node}]
              (if (= partition :column)
                ((:render delta-x) node)
                ((:render delta-y) node)))
-   :destruct (fn [node] (dissoc node :delta/prev))})
 
+   
+   :destruct (fn [node] (dissoc node :delta/prev))})
