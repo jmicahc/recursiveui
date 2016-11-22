@@ -1,12 +1,13 @@
 (ns recursiveui.structure
   (:require [recursiveui.element :as elem
-             :refer [attr style tag conjoin]]))
+             :refer [attr style tag conjoin class]]
+            [recursiveui.types :as types]))
 
 
 (def flex-row
   {:render
    (fn [{:keys [layout/magnitude]}]
-     (comp (attr :class "layout-row")
+     (comp (class "layout-row")
            (style :height magnitude
                   :display "flex"
                   :position "relative"
@@ -18,11 +19,12 @@
 (def flex-column
   {:render
    (fn [{:keys [layout/magnitude]}]
-     (comp (attr :class "layout-column")
+     (comp (class "layout-column")
            (style :width magnitude
                   :display "flex"
                   :position "relative"
                   :flexDirection "column")))})
+
 
 
 
@@ -34,7 +36,7 @@
    (fn [{:keys [layout/width layout/height
                 layout/top   layout/left
                 layout/flex-direction]}]
-     (comp (attr :class "layout-root")
+     (comp (class "layout-root")
            (style :width width
                   :height height
                   :top top
@@ -56,7 +58,7 @@
               backgroundColor "brown"
               opacity 1}
          :as node}]
-     (comp (attr :class "sidebar-left")
+     (comp (class "sidebar-left")
            (style :backgroundColor backgroundColor
                   :position "absolute"
                   :top "0px"
@@ -64,6 +66,7 @@
                   :width width
                   :height "100%"
                   :opacity opacity)))})
+
 
 
 
@@ -76,7 +79,7 @@
               backgroundColor "#1D1D2A"
               opacity 0.7}
          :as node}]
-     (comp (attr :class "sidebar-top")
+     (comp (class "sidebar-top")
            (style :backgroundColor backgroundColor
                   :position "absolute"
                   :left "0px"
@@ -85,6 +88,7 @@
                   :botttom "6px"
                   :width "100%"
                   :opacity opacity)))})
+
 
 
 
@@ -102,12 +106,29 @@
 
 
 
+
+(def drag-button
+  "temporary"
+  {:render
+   (fn [{:keys [layout/partition] :as node}]
+     (comp (class "drag-button")
+           (style :position "absolute"
+                  :top 10
+                  :left 10
+                  :width 15
+                  :width 15
+                  :backgroundColor "red")))})
+
+
+
+
 (def border
   "temporary"
   {:render
    (fn [node]
      (style :border "solid"
             :borderColor "#181319"))})
+
 
 
 

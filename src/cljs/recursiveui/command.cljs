@@ -15,6 +15,7 @@
           (first node)
           (next node)))
 
+
 (defn- layout-nav
   ([node]
    (with-paths
@@ -27,6 +28,7 @@
            (filter :layout/inner?)
            xf)
      node)))
+
 
 
 (defn- width-equations
@@ -104,8 +106,10 @@
 
 
 
+
 (defn- has-parent? [node]
   (>= (count (:path node)) 2))
+
 
 
 
@@ -113,15 +117,12 @@
   [state
    {{:keys [layout/width
             layout/height
-            layout/inner?
-            path]
-     :as node} :node
+            layout/inner?] :as node} :node
     :keys [delta/dx
-           delta/dy]
-    :as msg}]
+           delta/dy
+           path] :as msg}]
   {:pre [(not (neg? width))
          (not (neg? height))
-         (not (nil? path))
          (number? dx)
          (number? dy)
          (false? inner?)]}
@@ -130,6 +131,8 @@
                         :layout/height (+ dy height))
         new-layout (layout-update-size new-node dx dy)]
     (if (empty? path) new-layout (assoc-in state path new-layout))))
+
+
 
 
 (defn layout-resize-height
@@ -149,6 +152,8 @@
       (update-in state parent-path assoc :children new-children))))
 
 
+
+
 (defn layout-resize-width
   [state {:keys [node delta/dx] :as m}]
   {:pre [(not (nil? dx))
@@ -164,6 +169,7 @@
     (if (empty? parent-path)
       (assoc state :children new-children)
       (update-in state parent-path assoc :children new-children))))
+
 
 
 

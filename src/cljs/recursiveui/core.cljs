@@ -5,10 +5,9 @@
             [recursiveui.command :as command
              :refer [layout-resize-height]]
             [recursiveui.util :refer [with-paths]]
-            [recursiveui.structure :as structure]
-            [recursiveui.element :as elem :refer [base-element]]
             [recursiveui.signal :as signal]
             [recursiveui.component :as component]
+            [recursiveui.traverse :refer [render init]]
             [cljs.core.async :refer [chan <! >! take! mult put!]]
             [goog.dom :as gdom]
             [goog.events :as gevents]
@@ -21,47 +20,11 @@
 
 
 
-(defn tag->fn [tag]
-  (case tag
-    :structure/flex-root            structure/flex-root
-    :structure/flex-row             structure/flex-row
-    :structure/flex-column          structure/flex-column
-    :structure/style                structure/style-element
-    :structure/sidebar-left         structure/sidebar-left
-    :structure/sidebar-top          structure/sidebar-top
-    :structure/border               structure/border
-    :component/resize-layout        component/resize-layout))
-
-
-
-
-(defn render
-  ([{:keys [tags] :as node}]
-   (let [f (transduce (map (fn [tag]
-                             (let [f ((tag->fn tag) :render identity)]
-                               (f node))))
-                      comp
-                      tags)]
-     (f (into base-element (with-paths (map render) node))))))
-
-
-
-(defn init
-  [{:keys [tags children] :as node}]
-  (let [f (reduce (fn [f tag]
-                    (if-let [g ((tag->fn tag) :init identity)]
-                      (comp f g)
-                      f))
-                  identity
-                  tags)]
-    (f (assoc node :children (mapv init children)))))
-
-
-
 (defn dev-setup []
   (when debug?
     (enable-console-print!)
     (println "dev mode")))
+
 
 
 (defn root-component [state]
@@ -91,6 +54,7 @@
                      {:node root
                       :delta/dx (- (window-width) width)
                       :delta/dy (- (window-height) height)})))
+
 
 (gevents/unlisten js/window "resize" window-listener)
 (gevents/listen js/window "resize" window-listener)

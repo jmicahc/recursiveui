@@ -12,6 +12,7 @@
 (def state
   (reagent/atom
    {:tags [:structure/flex-root :structure/style]
+    :type :basic-element
     :layout/inner? false
     :layout/partition :column
     :layout/variable? true
