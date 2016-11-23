@@ -8,7 +8,7 @@
             [recursiveui.util :refer [with-paths]]
             [recursiveui.signal :as signal]
             [recursiveui.component :as component]
-            [recursiveui.traverse :refer [render render* init init*]]
+            [recursiveui.traverse :refer [render init]]
             [cljs.core.async :refer [chan <! >! take! mult put!]]
             [goog.dom :as gdom]
             [goog.events :as gevents]
@@ -31,7 +31,7 @@
 
 
 (defn root-component [state]
-  (fn [] [:div {:id "root-elem"} (render* @state)]))
+  (fn [] [:div {:id "root-elem"} (render @state)]))
 
 
 
@@ -68,6 +68,6 @@
 (type (read-string "{:type :a}"))
 (defn ^:export main []
   (dev-setup)
-  (swap! data/state init*)
+  (swap! data/state init)
   (window-listener nil)
   (reload))
