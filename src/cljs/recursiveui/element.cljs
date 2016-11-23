@@ -2,9 +2,8 @@
 
 
 (def base-element [:div {}
-                   [:div {:id "canvas"}]])
+                   [:div {:id "actions"}]])
 
-(def action-identity [:div {:id "action"}])
 
 
 
@@ -14,6 +13,8 @@
      (apply update elem 1 assoc k v kvs))))
 
 
+(defn attr* [elem k v & kvs]
+  (apply update elem 1 assoc k v kvs))
 
 
 (defn style [k v & kvs]
@@ -21,6 +22,8 @@
     (apply update-in elem [1 :style] assoc k v kvs)))
 
 
+(defn style* [elem k v & kvs]
+  (apply update-in elem [1 :style] assoc k v kvs))
 
 
 (defn tag [name]
@@ -28,44 +31,13 @@
     (assoc elem 0 name)))
 
 
-
-
-(defn html [s]
-  (fn [elem]
-    (conj elem s)))
-
-
 (defn class [s]
   (fn [elem]
     (update-in elem [1 :class] str "" s)))
 
 
-
-(defn on [k f & kfs]
-  (let [event-fn (fn [e] (if (map? e) e {:event e}))
-        fs (cons f (take-nth 2 (next kfs)))
-        event-fns (map (fn [f] (comp f event-fn)) fs)
-        ks (cons k (take-nth 2 kfs))
-        event-map (apply assoc {} (interleave ks event-fns))]
-    (fn [elem]
-      (update elem 1 merge event-map))))
-
-
-
-(def name->path {:action [1]})
-
-
-
-(defn update-slot [elem name f & args]
-  (let [path (name->path name)]
-    (apply update-in elem (name->path name) f args)))
-
-
-
-(defn action [f & fs]
-  (let [g (apply comp f fs)]
-    (fn [elem]
-      (update-slot elem :actions conj (g action-identity)))))
+(defn class* [elem s]
+  (update-in elem [1 :class] str " " s))
 
 
 
@@ -79,6 +51,19 @@
    :init (transduce (map #(% :init identity)) comp (list* c cs))})
 
 
+(defn conjoin* [xf & xfs]
+  (fn [rf]
+    (fn
+      ([] (rf))
+      ([node] (((apply comp xf xfs) rf) node))
+      ([node elem]
+       (rf node (apply conj
+                       elem
+                       (map (fn [f]
+                              (let [x ((f (fn [a b] b)) node base-element)]
+                                x))
+                            (cons xf xfs))))))))
+
 
 
 
@@ -91,6 +76,25 @@
                  (into (subvec elem 0 2)
                        (interpose x)
                        (subvec elem 2)))))
-
    
    :init (transduce (map #(% :init identity)) comp (list* c cs))})
+
+
+(defn elem [f & fs]
+  (fn [elem]
+    ((apply comp f fs) elem)))
+
+
+
+(defn ccomp [f & fs]
+  (fn [node]
+    (let [g (reduce comp (map #(% node) (cons f fs)))]
+      g)))
+
+
+
+(defn children [f & fs]
+  (fn [node]
+    (let [gs (map #(% node) (cons f fs))]
+      (fn [elem]
+        (apply conj elem (map #(%  base-element) gs))))))

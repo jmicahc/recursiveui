@@ -1,4 +1,5 @@
-(ns recursiveui.util)
+(ns recursiveui.util
+  (:require [cljs.core.async :as acync :refer [chan]]))
 
 
 (defn with-paths
@@ -11,6 +12,7 @@
                     (assoc node :path (conj path :children idx))))
                  xf)
            (:children node)))))
+
 
 
 

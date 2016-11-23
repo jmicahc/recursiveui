@@ -1,10 +1,12 @@
 (ns recursiveui.event
   (:require [recursiveui.data :as data]
-            [recursiveui.element :as elem :refer [attr]]
+            [recursiveui.element :as elem :refer [attr attr*]]
             [recursiveui.command :as command
              :refer [layout-resize-height
                      layout-resize-width
+                     layout-drag
                      update!]]
+            [cljs.core.async :refer [chan pipe]]
             [goog.events :refer [listen unlisten]]))
 
 
@@ -25,7 +27,8 @@
 
 (defn on [k f & kfs]
   (fn [node]
-    (let [event-fn (fn [e] (if (map? e) e {:event e :node node}))
+    (let [channel (:channel (meta node))
+          event-fn (fn [e] (if (map? e) e {:event e :node node}))
           fs (cons f (take-nth 2 (next kfs)))
           event-fns (map (fn [f] (comp f event-fn)) fs)
           ks (cons k (take-nth 2 kfs))
@@ -34,6 +37,13 @@
         (update elem 1 merge event-map)))))
 
 
+(def buffer-size 100)
+
+
+(defn on* [k f & kfs]
+  "temporary."
+  (fn [node]
+    (vary-meta node :channel pipe (chan 10 (map inc)))))
 
 
 
@@ -57,6 +67,28 @@
                (listen js/window "mouseup" unlisten-f)
                (listen js/window "mousemove" drag-listener)))))})
 
+
+
+(defn delta-y* [rf]
+  (fn
+    ([] (rf))
+    ([node] (rf (assoc node :delta/prev (atom [0 0]))))
+    ([node elem]
+     (letfn [(drag-listener [event]
+               (->>  {:event event :node node}
+                     delta-event-fn
+                     (update! layout-resize-height)))
+             (unlisten-f [e]
+               (unlisten js/window
+                         "mousemove"
+                         drag-listener))]
+       (rf node
+           (attr* elem
+                  :onMouseDown
+                  (fn [e]
+                    (reset! (:delta/prev node) [(.-clientX e) (.-clientY e)])
+                    (listen js/window "mouseup" unlisten-f)
+                    (listen js/winodw "mousemove" drag-listener))))))))
 
 
 
@@ -102,38 +134,85 @@
      (fn [node] (dissoc node :delta/prev))}))
 
 
-
-;; The problem is that there is not a single
-;; dom element associated with a given node,
-;; making it tricky to maintain a mapping from
-;; nodes to elements. It would seem that there
-;; is now a coordination problem associated
-;; with identifying the result of a node->element
-;; transformation and supplying that identification
-;; to the listen function, which would seem to need
-;; access to the underlying DOM nodes. We need a 
-;; reverse arrow in our function from db to DOM.
-;; This is bad news. Very bad news and in fact it 
-;; argues for sticking with hiccup-based description
-;; of DOM events.
-
-
-;; What are the reasons for using google closure's 
-;; event listeners? The overarching reason is that
-;; it seems to fit better with Clojure's async model.
-;; But what specifically is the reason? There were
-;; many reasons we want to separate event listening
-;; from rendering. We want the async logic to be a
-;; relatively pure function of the application state.
-;; We can do this by making listen a separate phase
-;; over which a time-dependent funciton of the current
-;; state is implemented. It doesn't exactly make sense
-;; to do this as part of render. 
+(def layout-drag-delta
+  {:init (fn [node] (assoc node :delta/prev (atom [0 0])))
+   :render
+   (fn [node]
+     (letfn [(drag-listener [event]
+               (.preventDefault event)
+               (->>  {:event event :node node}
+                     delta-event-fn
+                     (update! layout-drag)))
+             (unlisten-f [e]
+               (unlisten js/window "mousemove" drag-listener))]
+       
+     (attr :onMouseDown
+             (fn [e]
+               (.stopPropagation e)
+               (.preventDefault e)
+               (reset! (:delta/prev node) [(.-clientX e) (.-clientY e)])
+               (listen js/window "mouseup" unlisten-f)
+               (listen js/window "mousemove" drag-listener)))))})
 
 
-;; We want a channel valued recursive function of the
-;; application state. This is the ultimate goal. But it 
-;; seems the only natural way to attach an event listener
-;; to the dom is with a hiccup valued function which
-;; obviously is not channel valued. The idea is to add
-;; event listener.
+
+(defn delta-update [f]
+  {:init (fn [node] (assoc node :delta/prev (atom [0 0])))
+   :render
+   (fn [node]
+     (letfn [(drag-listener [event]
+               (.preventDefault event)
+               (.stopPropagation event)
+               (->>  {:event event :node node}
+                     delta-event-fn
+                     (update! f)))
+             (unlisten-f [e]
+               (unlisten js/window "mousemove" drag-listener))]
+       (attr :onMouseDown
+             (fn [e]
+               (.stopPropagation e)
+               (.preventDefault e)
+               (reset! (:delta/prev node) [(.-clientX e) (.-clientY e)])
+               (listen js/window "mouseup" unlisten-f)
+               (listen js/window "mousemove" drag-listener)))))})
+
+
+(defn delta-update* [f]
+  (fn [rf]
+    (fn
+      ([] (rf))
+      ([node] (rf (assoc node :delta/prev (atom [0 0]))))
+      ([node elem]
+       (letfn [(drag-listener [event]
+                 (->>  {:event event :node node}
+                       delta-event-fn
+                       (update! f)))
+               (unlisten-f [e]
+                 (unlisten js/window
+                           "mousemove"
+                           drag-listener))]
+         (rf node
+             (let [x (attr* elem
+                            :onMouseDown
+                            (fn [e]
+                              (reset! (:delta/prev node) [(.-clientX e) (.-clientY e)])
+                              (listen js/window "mouseup" unlisten-f)
+                              (listen js/window "mousemove" drag-listener)))]
+               x)))))))
+
+
+
+
+(def layout-resize-delta*
+  (let [render-delta-x ((delta-update* layout-resize-width) (fn [a b] b))
+        render-delta-y ((delta-update* layout-resize-height) (fn [a b] b))]
+    (fn [rf]
+      (fn
+        ([] (rf))
+        ([node] (rf (assoc node :delta/prev (atom [0 0]))))
+        ([node elem]
+         (if (= partition :column)
+           (render-delta-x node elem)
+           (render-delta-y node elem)))))))
+
+

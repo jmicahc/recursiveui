@@ -117,10 +117,10 @@
   [state
    {{:keys [layout/width
             layout/height
-            layout/inner?] :as node} :node
+            layout/inner?
+            path] :as node} :node
     :keys [delta/dx
-           delta/dy
-           path] :as msg}]
+           delta/dy] :as msg}]
   {:pre [(not (neg? width))
          (not (neg? height))
          (number? dx)
@@ -191,6 +191,75 @@
       (assoc state :children new-children)
       (update-in state parent-path assoc :children new-children))))
 
+
+(defn layout-drag
+  [state {:keys [node delta/dx delta/dy] :as msg}]
+  (let [path (:path node)
+        update-fn (fn [{:keys [layout/top layout/left] :as state}]
+                    (assoc state
+                           :layout/top (+ top dy)
+                           :layout/left (+ left dx)))]
+    (if (empty? path)
+      (update-fn state)
+      (update-in state path update-fn))))
+
+
+(defn layout-fullscreen
+  [state {:keys [node] :as msg}]
+  {:pre [(not (empty? (:path node)))]}
+  (let [path (:path node)
+        win-width (.-innerWidth js/window)
+        win-height (.-innerHeight js/window)
+        dx (- win-width (:layout/width node))
+        dy (- win-height (:layout/height node))]
+    (layout-resize-root state
+                        {:node (assoc node
+                                      :layout/left 0
+                                      :layout/top 0)
+                         :delta/dx dx
+                         :delta/dy dy})))
+
+
+(defn resize-root-left
+  [state {:keys [node delta/dx] :as msg}]
+  (update-in state
+             (:path node)
+             (fn [node]
+               (-> node
+                   (update :layout/left + dx)
+                   (update :layout/width - dx)
+                   (layout-update-width (- dx))))))
+
+
+
+(defn resize-root-right
+  [state {:keys [node delta/dx] :as msg}]
+  (update-in state
+             (:path node)
+             (fn [node]
+               (-> node
+                   (update :layout/width + dx)
+                   (layout-update-width dx)))))
+
+
+(defn resize-root-bottom
+  [state {:keys [node delta/dy] :as msg}]
+  (update-in state
+             (:path node)
+             (fn [node]
+               (-> node
+                   (update :layout/height + dy)
+                   (layout-update-height dy)))))
+
+(defn resize-root-top
+  [state {:keys [node delta/dy] :as msg}]
+  (update-in state
+             (:path node)
+             (fn [node]
+               (-> node
+                   (update :layout/top + dy)
+                   (update :layout/height - dy)
+                   (layout-update-height (- dy))))))
 
 
 

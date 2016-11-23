@@ -1,7 +1,9 @@
 (defproject recursiveui "0.1.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.9.229"]
-                 [reagent "0.6.0"]]
+                 [reagent "0.6.0" :exclusions [cljsjs/react-dom cljsjs/react-dom-server]]
+                 [cljsjs/react-dom "15.4.0-0"]
+                 [cljsjs/react-dom-server "15.4.0-0"]]
 
   :min-lein-version "2.5.3"
 
