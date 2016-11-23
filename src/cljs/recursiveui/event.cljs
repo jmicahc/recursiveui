@@ -57,7 +57,7 @@
       (fn
         ([] (rf))
         ([node] (rf (assoc node :delta/prev (atom [0 0]))))
-        ([node elem]
+        ([{:keys [layout/partition] :as node} elem]
          (if (= partition :column)
            (render-delta-x node elem)
            (render-delta-y node elem)))))))

@@ -6,6 +6,7 @@
             [cljs.core.async :refer [chan]]))
 
 
+
 (defn flex-row [rf]
   (fn
     ([] (rf))
@@ -77,7 +78,7 @@
     ([{:keys [side-bar/backgroundColor
               side-bar/opacity
               side-bar/width]
-       :or {width "15px"
+       :or {width "8px"
             backgroundColor "brown"
             opacity 1}
        :as node} elem]
@@ -99,7 +100,7 @@
     ([{:keys [side-bar/backgroundColor
               side-bar/opacity
               side-bar/height]
-       :or {height "12px"
+       :or {height "9px"
             backgroundColor "#1D1D2A"
             opacity 0.7}
        :as node} elem]
@@ -127,7 +128,7 @@
                     :top "0px"
                     :right "0px"
                     :height "100%"
-                    :width "15px"
+                    :width "8px"
                     :opacity "1"))))))
 
 
@@ -143,7 +144,7 @@
                     :position "absolute"
                     :bottom "0px"
                     :width "100%"
-                    :height "10px"
+                    :height "8px"
                     :opacity "1"))))))
 
 
@@ -168,18 +169,19 @@
     ([] (rf))
     ([node] (rf node))
     ([{:keys [layout/partition] :as node} elem]
-     (-> (class elem "drag-button")
-         (style :position "absolute"
-                :top 10
-                :left 10
-                :width 15
-                :height 20
-                :backgroundColor "blue")
-         (attr :onClick
-               (fn [e]
-                 (.stopPropagation e)
-                 (command/update! command/layout-fullscreen
-                                  {:node node})))))))
+     (rf node
+         (-> (class elem "drag-button")
+             (style :position "absolute"
+                    :top 10
+                    :left 10
+                    :width 15
+                    :height 20
+                    :backgroundColor "blue")
+             (attr :onClick
+                   (fn [e]
+                     (.stopPropagation e)
+                     (command/update! command/layout-fullscreen
+                                      {:node node}))))))))
 
 
 

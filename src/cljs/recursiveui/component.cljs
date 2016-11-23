@@ -18,6 +18,7 @@
 
 
 
+
 (def resize-layout
   (conjoin (comp structure/layout-sidebar
                  event/layout-resize-delta)))
@@ -54,5 +55,5 @@
 
 (def flex-root-action-bar
   (conjoin (comp structure/flex-root-action-bar
-                 event/layout-resize-delta
+                 (event/delta-update command/layout-drag #_event/layout-resize-delta)
                  (conjoin structure/drag-button))))
