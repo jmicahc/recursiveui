@@ -95,7 +95,7 @@
                             :layout/partition :row
                             :layout/magnitude 100
                             :layout/active? true
-                            :layout/variable? true
+                            :layout/variable? false
                             :layout/inner? true
                             :style/backgroundColor "green"
                             :children [{:tags [:structure/flex-column
@@ -137,4 +137,3 @@
                             :layout/magnitude 600
                             :style/backgroundColor "orange"
                             :layout/variable? true}]}]}))
-

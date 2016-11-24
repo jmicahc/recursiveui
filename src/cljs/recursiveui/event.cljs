@@ -11,6 +11,40 @@
 
 
 
+(def delta-x
+  (comp (map (fn [[a b]]
+               (let [event-a (:event a)
+                     event-b (:event b)
+                     delta-x (- (.-clientX event-a) (.-clientX event-b))]
+                 (assoc a :delta/dx delta-x))))
+        (partition-all 2)))
+
+
+
+
+(def delta-y
+  (comp (map (fn [[a b]]
+               (let [event-a (:event a)
+                     event-b (:event b)
+                     delta-y (- (.-clientY event-a) (.-clientY event-b))]
+                 (assoc a :delta/dy delta-y))))
+        (partition-all 2)))
+
+
+
+(def delta-xy
+  (comp (map (fn [[a b]]
+               (let [event-a (:event a)
+                     event-b (:event b)
+                     delta-x (- (.-clientX event-a) (.-clientX event-b))
+                     delta-y (- (.-clientY event-a) (.-clientY event-b))]
+                 (assoc a
+                        :delta/dx delta-x
+                        :delta/dy delta-y))))
+        (partition-all 2)))
+
+
+
 
 (defn delta-event-fn [{:keys [event node] :as m}]
   (let [x (.-clientX event)
@@ -23,14 +57,12 @@
            :delta/dy (- y (value 1)))))
 
 
-
-
 (defn delta-update [f]
   (fn [rf]
     (fn
       ([] (rf))
       ([node] (rf (assoc node :delta/prev (atom [0 0]))))
-      ([node elem]
+      ([node ch elem]
        (letfn [(drag-listener [event]
                  (->>  {:event event :node node}
                        delta-event-fn
@@ -40,6 +72,7 @@
                            "mousemove"
                            drag-listener))]
          (rf node
+             ch
              (attr elem
                    :onMouseDown
                    (fn [e]
@@ -51,13 +84,13 @@
 
 
 (def layout-resize-delta
-  (let [render-delta-x ((delta-update layout-resize-width) (fn [a b] b))
-        render-delta-y ((delta-update layout-resize-height) (fn [a b] b))]
+  (let [render-delta-x ((delta-update layout-resize-width) (fn [a b c] c))
+        render-delta-y ((delta-update layout-resize-height) (fn [a b c] c))]
     (fn [rf]
       (fn
         ([] (rf))
         ([node] (rf (assoc node :delta/prev (atom [0 0]))))
-        ([{:keys [layout/partition] :as node} elem]
+        ([{:keys [layout/partition] :as node} ch elem]
          (if (= partition :column)
-           (render-delta-x node elem)
-           (render-delta-y node elem)))))))
+           (render-delta-x node ch elem)
+           (render-delta-y node ch elem)))))))

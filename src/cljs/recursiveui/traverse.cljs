@@ -14,11 +14,23 @@
 
 
 
+(defn build [xf]
+  (xf (fn [a b c] [b c])))
+
+
+(def ids (atom {}))
+(def update-ids! (memoize (fn [id path] (swap! ids assoc id path))))
+
+
 (defn render
-  ([{:keys [tags] :as node}]
+  ([ch {:keys [tags] :as node}]
    (let [xf (transduce (map tag->fn) comp tags) 
-         f (xf (fn [a b] b))]
-     (f node (into base-element (render-nav (map render) node))))))
+         f (xf (fn [node ch elem] [node ch elem]))
+         [node ch elem] (f node ch (into base-element (render-nav (map #(render ch %)) node)))]
+     (when-let [id (:component/id node)]
+       (update-ids! id (:path node)))
+     elem)))
+
 
 
 (defn init

@@ -55,5 +55,5 @@
 
 (def flex-root-action-bar
   (conjoin (comp structure/flex-root-action-bar
-                 (event/delta-update command/layout-drag #_event/layout-resize-delta)
+                 (event/delta-update command/layout-drag)
                  (conjoin structure/drag-button))))

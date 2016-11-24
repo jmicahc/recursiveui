@@ -28,10 +28,15 @@
     (println "dev mode")))
 
 
-
-
 (defn root-component [state]
-  (fn [] [:div {:id "root-elem"} (render @state)]))
+  (fn []
+    (let [ch (chan)
+          ret (render ch @state)]
+      (go-loop []
+        (let [x (<! ch)]
+          (println x)
+          (recur)))
+      [:div {:id "root-elem"} ret])))
 
 
 

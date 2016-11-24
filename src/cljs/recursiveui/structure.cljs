@@ -1,7 +1,8 @@
 (ns recursiveui.structure
   (:require [recursiveui.element :as elem
-             :refer [attr style tag conjoin class]]
+             :refer [attr style tag conjoin class event]]
             [recursiveui.types :as types]
+            [recursiveui.event :as event]
             [recursiveui.command :as command]
             [cljs.core.async :refer [chan]]))
 
@@ -11,12 +12,14 @@
   (fn
     ([] (rf))
     ([node] (rf node))
-    ([{:keys [layout/magnitude] :as node} elem]
-     (rf node (style elem
-                     :height magnitude
-                     :display "flex"
-                     :position "relative"
-                     :flexDiretion "row")))))
+    ([{:keys [layout/magnitude] :as node} ch elem]
+     (rf node
+         ch
+         (style elem
+                :height magnitude
+                :display "flex"
+                :position "relative"
+                :flexDiretion "row")))))
 
 
 
@@ -24,12 +27,14 @@
   (fn
     ([] (rf))
     ([node] (rf node))
-    ([{:keys [layout/magnitude] :as node} elem]
-     (rf node (style elem
-                     :width magnitude
-                     :display "flex"
-                     :position "relative"
-                     :flexDiretion "column")))))
+    ([{:keys [layout/magnitude] :as node} ch elem]
+     (rf node
+         ch
+         (style elem
+                :width magnitude
+                :display "flex"
+                :position "relative"
+                :flexDiretion "column")))))
 
 
 
@@ -40,15 +45,17 @@
     ([{:keys [layout/width layout/height
               layout/top   layout/left
               layout/flex-direction]
-       :as node} elem]
-     (rf node (style elem
-                     :width width
-                     :height height
-                     :top top
-                     :left left
-                     :dipslay "flex"
-                     :position "absolute"
-                     :flexDirection flex-direction)))))
+       :as node} ch elem]
+     (rf node
+         ch
+         (style elem
+                :width width
+                :height height
+                :top top
+                :left left
+                :dipslay "flex"
+                :position "absolute"
+                :flexDirection flex-direction)))))
 
 
 
@@ -56,8 +63,9 @@
   (fn
     ([] (rf))
     ([node] (rf node))
-    ([node elem]
+    ([node ch elem]
      (rf node
+         ch
          (-> (class elem "layout-root-action-bar")
              (style :width "100%"
                     :height 40
@@ -81,8 +89,9 @@
        :or {width "8px"
             backgroundColor "brown"
             opacity 1}
-       :as node} elem]
+       :as node} ch elem]
      (rf node
+         ch
          (-> (class elem "sidebar-left")
              (style :backgroundColor backgroundColor
                     :position "absolute"
@@ -103,8 +112,9 @@
        :or {height "9px"
             backgroundColor "#1D1D2A"
             opacity 0.7}
-       :as node} elem]
+       :as node} ch elem]
      (rf node
+         ch
          (-> (class elem "sidebar-top")
              (style :backgroundColor backgroundColor
                     :position "absolute"
@@ -120,8 +130,9 @@
   (fn
     ([] (rf))
     ([node] (rf node))
-    ([node elem]
+    ([node ch elem]
      (rf node
+         ch
          (-> (class elem "sidebar-right")
              (style :backgroundColor "brown"
                     :position "absolute"
@@ -137,8 +148,9 @@
   (fn
     ([] (rf))
     ([node] (rf node))
-    ([node elem]
+    ([node ch elem]
      (rf node
+         ch
          (-> (class elem "sidebar-bottom")
              (style :backgroundColor "brown"
                     :position "absolute"
@@ -150,16 +162,16 @@
 
 
 (defn layout-sidebar [rf]
-  (let [render-sidebar-left (sidebar-left (fn [a b] b))
-        render-sidebar-top (sidebar-top (fn [a b] b))]
+  (let [render-sidebar-left (sidebar-left (fn [a b c] c))
+        render-sidebar-top (sidebar-top (fn [a b c] c))]
     (fn
       ([] (rf))
       ([node] (rf node))
-      ([{:keys [layout/partition] :as node} elem]
-       (rf node
+      ([{:keys [layout/partition] :as node} ch elem]
+       (rf node ch
            (if (= partition :column)
-             (render-sidebar-left node elem)
-             (render-sidebar-top node elem)))))))
+             (render-sidebar-left node ch elem)
+             (render-sidebar-top node ch elem)))))))
 
 
 
@@ -168,8 +180,8 @@
   (fn
     ([] (rf))
     ([node] (rf node))
-    ([{:keys [layout/partition] :as node} elem]
-     (rf node
+    ([{:keys [layout/partition] :as node} ch elem]
+     (rf node ch 
          (-> (class elem "drag-button")
              (style :position "absolute"
                     :top 10
@@ -177,12 +189,17 @@
                     :width 15
                     :height 20
                     :backgroundColor "blue")
+             (event node ch
+                    :onMouseDown
+                    (map (fn [msg] "message-recieved"))
+
+                    :onDoubleClick
+                    (map (fn [msg] "double clicked!")))
              (attr :onClick
                    (fn [e]
                      (.stopPropagation e)
                      (command/update! command/layout-fullscreen
                                       {:node node}))))))))
-
 
 
 
@@ -192,8 +209,9 @@
   (fn
     ([] (rf))
     ([node] (rf node))
-    ([node elem]
+    ([node ch elem]
      (rf node
+         ch
          (style elem
                 :border "solid"
                 :borderColor "#181319")))))
@@ -206,9 +224,25 @@
   (fn
     ([] (rf))
     ([node] (rf node))
-    ([{:keys [style/backgroundColor] :as node} elem]
-     (rf node (style elem :backgroundColor backgroundColor)))))
+    ([{:keys [style/backgroundColor] :as node} ch elem]
+     (rf node ch (style elem :backgroundColor backgroundColor)))))
 
 
 
+;; The root must change its state in response to messages.
+;; It gets sent instructions for a job and its job is to
+;; apply those instructions in its context. Is the full
+;; job in the message?
+#_(defn root-listener [rf]
+  (fn
+    ([] (rf))
+    ([node] (rf node))
+    ([{:keys [root/dragging?] :as msg} ch elem]
+     (rf node
+         (event/on :job event/delta-xy)
+         (-> )))))
 
+;; Everyone needs to be able to send a job
+;; to everyone else so that any element can act
+;; as a worker! This implies we need some 
+;; kind of query.
