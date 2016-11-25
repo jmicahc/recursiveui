@@ -28,14 +28,11 @@
     (println "dev mode")))
 
 
+
 (defn root-component [state]
   (fn []
     (let [ch (chan)
           ret (render ch @state)]
-      (go-loop []
-        (let [x (<! ch)]
-          (println x)
-          (recur)))
       [:div {:id "root-elem"} ret])))
 
 
@@ -49,7 +46,6 @@
 
 (defn window-width [] (.-innerWidth js/window))
 (defn window-height [] (.-innerHeight js/window))
-
 
 
 

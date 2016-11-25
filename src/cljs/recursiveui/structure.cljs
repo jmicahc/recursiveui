@@ -8,13 +8,13 @@
 
 
 
-(defn flex-row [rf]
+
+(defn flex-row [cf]
   (fn
-    ([] (rf))
-    ([node] (rf node))
+    ([] (cf))
+    ([node] (cf node))
     ([{:keys [layout/magnitude] :as node} ch elem]
-     (rf node
-         ch
+     (cf node ch
          (style elem
                 :height magnitude
                 :display "flex"
@@ -23,13 +23,13 @@
 
 
 
-(defn flex-column [rf]
+
+(defn flex-column [cf]
   (fn
-    ([] (rf))
-    ([node] (rf node))
+    ([] (cf))
+    ([node] (cf node))
     ([{:keys [layout/magnitude] :as node} ch elem]
-     (rf node
-         ch
+     (cf node ch
          (style elem
                 :width magnitude
                 :display "flex"
@@ -38,16 +38,16 @@
 
 
 
-(defn flex-root [rf]
+
+(defn flex-root [cf]
   (fn
-    ([] (rf))
-    ([node] (rf node))
+    ([] (cf))
+    ([node] (cf node))
     ([{:keys [layout/width layout/height
               layout/top   layout/left
               layout/flex-direction]
        :as node} ch elem]
-     (rf node
-         ch
+     (cf node ch
          (style elem
                 :width width
                 :height height
@@ -59,14 +59,15 @@
 
 
 
-(defn flex-root-action-bar [rf]
+
+(defn flex-root-action-bar [cf]
   (fn
-    ([] (rf))
-    ([node] (rf node))
+    ([] (cf))
+    ([node] (cf node))
     ([node ch elem]
-     (rf node
-         ch
-         (-> (class elem "layout-root-action-bar")
+     (cf node ch
+         (-> elem
+             (class "layout-root-action-bar")
              (style :width "100%"
                     :height 40
                     :top -3
@@ -78,11 +79,10 @@
 
 
 
-
-(defn sidebar-left [rf]
+(defn sidebar-left [cf]
   (fn
-    ([] (rf))
-    ([node] (rf node))
+    ([] (cf))
+    ([node] (cf node))
     ([{:keys [side-bar/backgroundColor
               side-bar/opacity
               side-bar/width]
@@ -90,8 +90,7 @@
             backgroundColor "brown"
             opacity 1}
        :as node} ch elem]
-     (rf node
-         ch
+     (cf node ch
          (-> (class elem "sidebar-left")
              (style :backgroundColor backgroundColor
                     :position "absolute"
@@ -102,10 +101,11 @@
                     :opacity opacity))))))
 
 
-(defn sidebar-top [rf]
+
+(defn sidebar-top [cf]
   (fn
-    ([] (rf))
-    ([node] (rf node))
+    ([] (cf))
+    ([node] (cf node))
     ([{:keys [side-bar/backgroundColor
               side-bar/opacity
               side-bar/height]
@@ -113,8 +113,7 @@
             backgroundColor "#1D1D2A"
             opacity 0.7}
        :as node} ch elem]
-     (rf node
-         ch
+     (cf node ch
          (-> (class elem "sidebar-top")
              (style :backgroundColor backgroundColor
                     :position "absolute"
@@ -126,13 +125,13 @@
                     :opacity opacity))))))
 
 
-(defn sidebar-right [rf]
+
+(defn sidebar-right [cf]
   (fn
-    ([] (rf))
-    ([node] (rf node))
+    ([] (cf))
+    ([node] (cf node))
     ([node ch elem]
-     (rf node
-         ch
+     (cf node ch
          (-> (class elem "sidebar-right")
              (style :backgroundColor "brown"
                     :position "absolute"
@@ -144,13 +143,12 @@
 
 
 
-(defn sidebar-bottom [rf]
+(defn sidebar-bottom [cf]
   (fn
-    ([] (rf))
-    ([node] (rf node))
+    ([] (cf))
+    ([node] (cf node))
     ([node ch elem]
-     (rf node
-         ch
+     (cf node ch
          (-> (class elem "sidebar-bottom")
              (style :backgroundColor "brown"
                     :position "absolute"
@@ -161,14 +159,15 @@
 
 
 
-(defn layout-sidebar [rf]
+
+(defn layout-sidebar [cf]
   (let [render-sidebar-left (sidebar-left (fn [a b c] c))
         render-sidebar-top (sidebar-top (fn [a b c] c))]
     (fn
-      ([] (rf))
-      ([node] (rf node))
+      ([] (cf))
+      ([node] (cf node))
       ([{:keys [layout/partition] :as node} ch elem]
-       (rf node ch
+       (cf node ch
            (if (= partition :column)
              (render-sidebar-left node ch elem)
              (render-sidebar-top node ch elem)))))))
@@ -176,42 +175,36 @@
 
 
 
-(defn drag-button [rf]
+(defn drag-button [cf]
   (fn
-    ([] (rf))
-    ([node] (rf node))
+    ([] (cf))
+    ([node] (cf node))
     ([{:keys [layout/partition] :as node} ch elem]
-     (rf node ch 
-         (-> (class elem "drag-button")
+     (cf node ch
+         (-> elem
+             (class "drag-button")
              (style :position "absolute"
                     :top 10
                     :left 10
                     :width 15
                     :height 20
                     :backgroundColor "blue")
-             (event node ch
-                    :onMouseDown
-                    (map (fn [msg] "message-recieved"))
-
-                    :onDoubleClick
-                    (map (fn [msg] "double clicked!")))
              (attr :onClick
                    (fn [e]
                      (.stopPropagation e)
-                     (command/update! command/layout-fullscreen
-                                      {:node node}))))))))
+                     (command/update! command/layout-fullscreen {:node node}))))))))
+
 
 
 
 (defn border
   "temporary"
-  [rf]
+  [cf]
   (fn
-    ([] (rf))
-    ([node] (rf node))
+    ([] (cf))
+    ([node] (cf node))
     ([node ch elem]
-     (rf node
-         ch
+     (cf node ch
          (style elem
                 :border "solid"
                 :borderColor "#181319")))))
@@ -220,12 +213,12 @@
 
 (defn style-element
   "temporary"
-  [rf]
+  [cf]
   (fn
-    ([] (rf))
-    ([node] (rf node))
+    ([] (cf))
+    ([node] (cf node))
     ([{:keys [style/backgroundColor] :as node} ch elem]
-     (rf node ch (style elem :backgroundColor backgroundColor)))))
+     (cf node ch (style elem :backgroundColor backgroundColor)))))
 
 
 

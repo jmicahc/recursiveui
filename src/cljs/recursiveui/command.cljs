@@ -16,6 +16,7 @@
           (next node)))
 
 
+
 (defn- layout-nav
   ([node]
    (with-paths
@@ -39,8 +40,10 @@
    (if (= partition :column)
      (if magnitude
        (if variable? [[node]] [[]])
-       (layout-nav (mapcat width-equations) node))
+       (layout-nav (comp (map width-equations) cat) node))
      (product (layout-nav (map width-equations) node)))))
+
+
 
 
 
@@ -52,19 +55,63 @@
    (if (= partition :row)
      (if magnitude
        (if variable? [[node]] [[]])
-       (layout-nav (mapcat height-equations) node))
+       (layout-nav (comp (map height-equations) cat) node))
      (product (layout-nav (map height-equations) node)))))
 
+ 
+
+(defn adjusted-delta [eqs delta]
+  (letfn [(calc [eq dx]
+            (reduce (fn [dx {:keys [layout/magnitude
+                                    layout/min-magnitude
+                                    layout/max-magnitude]
+                             :as term}]
+                      (cond (<= (+ dx magnitude) min-magnitude)
+                            (- dx (- magnitude min-magnitude))
+
+                            (>= (+ dx magnitude) max-magnitude)
+                            (- dx (- magnitude max-magnitude))
+
+                            :else dx))
+                    dx
+                    eq))]
+    (if (neg? delta)
+      (apply max 0 (map #(calc % delta) eqs))
+      (apply min (map #(calc % delta) eqs)))))
 
 
+;; How do we detect when the window can't go any further to
+;; the right? The left subtree should alsways be updated
+;; by an amuont equal to the right subtree, w.l.g. It seems like
+;; we need to communicate the actual delta applied somehow. 
 (defn- solve-equations
-  [eqs dx]
-  (letfn [(solve-equation [eq delta]
-            (let [freq (count eq)
-                  x    (/ delta freq)]
-              (mapv (fn [term]
-                      (update term :layout/magnitude + x)) eq)))]
-    (mapv (fn [eq] (solve-equation eq dx)) eqs)))
+  [eqs delta]
+  (letfn [(solve-eq [eq dx freq]
+            (reduce (fn [ret {:keys [layout/magnitude
+                                     layout/min-magnitude
+                                     layout/max-magnitude]
+                              :or {max-magnitude 900}
+                              :as term}]
+                      (cond (<= (+ dx magnitude) min-magnitude)
+                            (conj (solve-eq ret
+                                            (/ (- delta (- magnitude min-magnitude)) (dec freq))
+                                            (dec freq))
+                                  (assoc term :layout/magnitude min-magnitude))
+
+                            (>= (+ dx magnitude) max-magnitude)
+                            (conj (solve-eq ret
+                                            ;; Can we pull this out?
+                                            (/ (- delta (- magnitude max-magnitude)) (dec freq))
+                                            (dec freq))
+                                  (assoc term :layout/magnitude max-magnitude))
+
+                            :else
+                            (conj ret (assoc term :layout/magnitude (+ dx magnitude)))))
+                    []
+                    eq))]
+    (mapv (fn [eq] (solve-eq eq (/ delta (count eq)) (count eq))) eqs)))
+
+
 
 
 
@@ -95,7 +142,6 @@
   (-> (height-equations node)
       (solve-equations dy)
       (equations->tree node)))
-
 
 
 
@@ -192,6 +238,8 @@
       (update-in state parent-path assoc :children new-children))))
 
 
+
+
 (defn layout-drag
   [state {:keys [node delta/dx delta/dy] :as msg}]
   (let [path (:path node)
@@ -202,6 +250,8 @@
     (if (empty? path)
       (update-fn state)
       (update-in state path update-fn))))
+
+
 
 
 (defn layout-fullscreen
@@ -220,6 +270,8 @@
                          :delta/dy dy})))
 
 
+
+
 (defn resize-root-left
   [state {:keys [node delta/dx] :as msg}]
   (update-in state
@@ -229,6 +281,8 @@
                    (update :layout/left + dx)
                    (update :layout/width - dx)
                    (layout-update-width (- dx))))))
+
+
 
 
 
@@ -242,6 +296,9 @@
                    (layout-update-width dx)))))
 
 
+
+
+
 (defn resize-root-bottom
   [state {:keys [node delta/dy] :as msg}]
   (update-in state
@@ -250,6 +307,9 @@
                (-> node
                    (update :layout/height + dy)
                    (layout-update-height dy)))))
+
+
+
 
 (defn resize-root-top
   [state {:keys [node delta/dy] :as msg}]

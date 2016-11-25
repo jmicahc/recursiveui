@@ -26,10 +26,7 @@
   (update-in elem [1 :class] str " " s))
 
 
-(def dom-event? #{:onClick
-                  :onMouseDown
-                  :onMouseMove
-                  :onDoubleClick
+(def dom-event? #{:onClick :onMouseDown :onMouseMove :onDoubleClick
                   :onMouseUp})
 
 

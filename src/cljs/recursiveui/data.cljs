@@ -28,6 +28,8 @@
                 :component/id 2
                 :layout/partition :row
                 :layout/magnitude 100
+                :layout/min-magnitude 40
+                :layout/max-magnitude 400
                 :layout/active? true
                 :layout/variable? true
                 :layout/inner? true
@@ -40,6 +42,8 @@
                             :layout/variable? true
                             :layout/inner? true
                             :layout/magnitude 200
+                            ;; :layout/max-magnitude 300
+                            :layout/min-magnitude 50
                             :style/backgroundColor "blue"}
                            {:tags [:component/resize-layout
                                    :structure/flex-column
@@ -47,6 +51,7 @@
                             :component/id 4
                             :layout/partition :column
                             :layout/magnitude 150
+                            :layout/min-magnitude 140
                             :layout/active? true
                             :layout/variable? true
                             :layout/inner? true
@@ -57,6 +62,7 @@
                             :component/id 5
                             :layout/partition :column
                             :layout/magnitude 150
+                            :layout/min-magnitude 140
                             :layout/active? true
                             :layout/variable? true
                             :layout/inner? true
@@ -69,6 +75,7 @@
                 :layout/active? true
                 :layout/inner? true
                 :layout/magnitude 600
+                :layout/min-magnitude 60
                 :style/backgroundColor "orange"
                 :layout/variable? true}
                {:tags [:structure/flex-root
@@ -94,6 +101,7 @@
                             :component/id 8
                             :layout/partition :row
                             :layout/magnitude 100
+                            :layout/min-magnitude 60
                             :layout/active? true
                             :layout/variable? false
                             :layout/inner? true
@@ -106,6 +114,7 @@
                                         :layout/variable? true
                                         :layout/inner? true
                                         :layout/magnitude 200
+                                        :layout/min-magnitude 10
                                         :style/backgroundColor "blue"}
                                        {:tags [:structure/flex-column
                                                :structure/style
@@ -113,6 +122,7 @@
                                         :component/id 10
                                         :layout/partition :column
                                         :layout/magnitude 150
+                                        :layout/min-magnitude 45
                                         :layout/active? true
                                         :layout/variable? false
                                         :layout/inner? true
@@ -123,6 +133,7 @@
                                         :component/id 11
                                         :layout/partition :column
                                         :layout/magnitude 150
+                                        :layout/min-magnitude 50
                                         :layout/active? true
                                         :layout/variable? true
                                         :layout/inner? true
@@ -135,5 +146,6 @@
                             :layout/active? true
                             :layout/inner? true
                             :layout/magnitude 600
+                            :layout/min-magnitude 60
                             :style/backgroundColor "orange"
                             :layout/variable? true}]}]}))
