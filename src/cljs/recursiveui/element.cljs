@@ -26,8 +26,8 @@
   (update-in elem [1 :class] str " " s))
 
 
-(def dom-event? #{:onClick :onMouseDown :onMouseMove :onDoubleClick
-                  :onMouseUp})
+
+(def dom-event? #{:onClick :onMouseDown :onMouseMove :onDoubleClick :onMouseUp})
 
 
 
@@ -35,14 +35,17 @@
   (update elem 1
           (partial merge-with comp)
           (into {}
-                (for [[k xf] (partition 2 (list* k f kfs))]
-                  [k (fn [e]
-                       (.stopPropagation e)
-                       (.preventDefault e)
-                       (let [transform (chan 1 xf)]
-                         (pipe transform ch)
-                         (put! transform {:event e :node node :name (keyword (.-name e))})
-                         e))]))))
+                (for [[k xf] (partition 2 (list* k f kfs))
+                      :let [transform (chan 1 xf)]]
+                  (do (pipe transform ch)
+                      [k (fn [e]
+                           (.stopPropagation e)
+                           (.preventDefault e)
+                           (put! transform {:event e
+                                            :node node
+                                            :name (keyword (.-name e))})
+                           e)])))))
+
 
 
 
