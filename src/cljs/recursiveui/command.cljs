@@ -57,34 +57,58 @@
        (if variable? [[node]] [[]])
        (layout-nav (comp (map height-equations) cat) node))
      (product (layout-nav (map height-equations) node)))))
-
  
 
-(defn adjusted-delta [eqs delta]
-  (letfn [(calc [eq dx]
-            (reduce (fn [dx {:keys [layout/magnitude
-                                    layout/min-magnitude
-                                    layout/max-magnitude]
-                             :as term}]
-                      (cond (<= (+ dx magnitude) min-magnitude)
-                            (- dx (- magnitude min-magnitude))
 
-                            (>= (+ dx magnitude) max-magnitude)
-                            (- dx (- magnitude max-magnitude))
-
-                            :else dx))
-                    dx
-                    eq))]
-    (if (neg? delta)
-      (apply max 0 (map #(calc % delta) eqs))
-      (apply min (map #(calc % delta) eqs)))))
+(defn- out-of-bounds?
+  [dx {:keys [layout/magnitude
+              layout/min-magnitude
+              layout/max-magnitude]
+       :or {max-magnitude 1500}
+       :as term}]
+  (let [ret (or (<= (+ dx magnitude) min-magnitude)
+                (>= (+ dx magnitude) max-magnitude))]
+    (println "out-of-bounds?" ret)
+    ret))
 
 
-;; How do we detect when the window can't go any further to
-;; the right? The left subtree should alsways be updated
-;; by an amuont equal to the right subtree, w.l.g. It seems like
-;; we need to communicate the actual delta applied somehow. 
+
+#_(defn- solve-equations
+  [eqs delta]
+  (letfn [(solve-eq [eq]
+            (let [dx delta]
+              (reduce (fn [ret {:keys [layout/magnitude
+                                       layout/min-magnitude
+                                       layout/max-magnitude]
+                                :or {max-magnitude 2000}
+                                :as term}]
+                        (cond (<= (+ delta magnitude) min-magnitude)
+                              (conj ret (assoc term :layout/magnitude min-magnitude))
+
+                              (>= (+ delta magnitude) max-magnitude)
+                              (conj ret (assoc term :layout/magnitude max-magnitude))
+
+                              :else
+                              (conj ret (assoc term :layout/magnitude (+ delta magnitude)))))
+                      []
+                      eq)))]
+    (mapv solve-eq eqs)))
+
+
+(defn calc-freq [eq dx]
+  (count (remove (partial out-of-bounds? dx) eq)))
+
+
 (defn- solve-equations
+  [eqs dx]
+  (letfn [(solve-equation [eq delta]
+            (let [freq (count eq)
+                  x    (/ delta freq)]
+              (mapv (fn [term] (update term :layout/magnitude + x)) eq)))]
+    (mapv (fn [eq] (solve-equation eq dx)) eqs)))
+
+
+#_(defn- solve-equations
   [eqs delta]
   (letfn [(solve-eq [eq dx freq]
             (reduce (fn [ret {:keys [layout/magnitude
@@ -94,14 +118,15 @@
                               :as term}]
                       (cond (<= (+ dx magnitude) min-magnitude)
                             (conj (solve-eq ret
-                                            (/ (- delta (- magnitude min-magnitude)) (dec freq))
+                                            (/ (+ delta (- magnitude min-magnitude))
+                                               (dec freq))
                                             (dec freq))
                                   (assoc term :layout/magnitude min-magnitude))
 
                             (>= (+ dx magnitude) max-magnitude)
                             (conj (solve-eq ret
-                                            ;; Can we pull this out?
-                                            (/ (- delta (- magnitude max-magnitude)) (dec freq))
+                                            (/ (- delta (- magnitude max-magnitude))
+                                               (dec freq))
                                             (dec freq))
                                   (assoc term :layout/magnitude max-magnitude))
 
@@ -128,6 +153,8 @@
 
 
 
+
+
 (defn- layout-update-width
   [node dx]
   (-> (width-equations node)
@@ -137,11 +164,13 @@
 
 
 
+
 (defn- layout-update-height
   [node dy]
   (-> (height-equations node)
-      (solve-equations dy)
-      (equations->tree node)))
+      (solve-equations  dy)
+      (equations->tree  node)))
+
 
 
 
@@ -149,7 +178,6 @@
   [node dx dy]
   (-> (layout-update-width node dx)
       (layout-update-height dy)))
-
 
 
 
@@ -198,6 +226,60 @@
       (update-in state parent-path assoc :children new-children))))
 
 
+#_(defn layout-resize-height
+  [state {:keys [node delta/dy] :as m}]
+  {:pre [(has-parent? node)
+         (not (nil? dy))]}
+  (let [parent-path (-> (:path node) pop pop)
+        parent (get-in state parent-path)
+        index (peek (:path node))
+        left-subtree (subtree parent 0 index)
+        right-subtree (subtree parent index)
+        left-equations (height-equations left-subtree)
+        right-equations (height-equations right-subtree)
+        real-left-delta (adjust-delta left-equations dy)
+        real-right-delta (adjust-delta right-equations (- dy))
+        real-delta (if (< (Math/abs real-left-delta)
+                          (Math/abs real-right-delta))
+                     real-left-delta
+                     real-right-delta)
+        solved-left (solve-equations left-equations (- real-delta))
+        solved-right (solve-equations right-equations real-delta)
+        left-children (:children (equations->tree solved-left left-subtree))
+        right-children (:children (equations->tree solved-right right-subtree))
+        new-children (into left-children right-children)]
+    (if (empty? parent-path)
+      (assoc state :children new-children)
+      (update-in state parent-path assoc :children new-children))))
+
+
+#_(defn layout-resize-width
+  [state {:keys [node delta/dx] :as m}]
+  {:pre [(has-parent? node)
+         (not (nil? dx))]}
+  (let [parent-path (-> (:path node) pop pop)
+        parent (get-in state parent-path)
+        index (peek (:path node))
+        left-subtree (subtree parent 0 index)
+        right-subtree (subtree parent index)
+        left-equations (width-equations left-subtree)
+        right-equations (width-equations right-subtree)
+        real-left-delta (adjust-delta left-equations dx)
+        real-right-delta (adjust-delta right-equations (- dx))
+        real-delta (if (< (Math/abs real-left-delta)
+                          (Math/abs real-right-delta))
+                     real-left-delta
+                     real-right-delta)
+        solved-left (solve-equations left-equations (- real-delta))
+        solved-right (solve-equations right-equations real-delta)
+        left-children (:children (equations->tree solved-left left-subtree))
+        right-children (:children (equations->tree solved-right right-subtree))
+        new-children (into left-children right-children)]
+    #_(println "real delta" real-delta)
+    #_(println "real left delta" real-left-delta)
+    (if (empty? parent-path)
+      (assoc state :children new-children)
+      (update-in state parent-path assoc :children new-children))))
 
 
 (defn layout-resize-width
@@ -212,6 +294,7 @@
         resized-left (layout-update-width left-subtree dx)
         resized-right (layout-update-width right-subtree (- dx))
         new-children (into (:children resized-left) (:children resized-right))]
+    (println "hello")
     (if (empty? parent-path)
       (assoc state :children new-children)
       (update-in state parent-path assoc :children new-children))))

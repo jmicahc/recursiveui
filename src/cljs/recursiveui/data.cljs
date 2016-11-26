@@ -50,8 +50,19 @@
                                    :structure/style]
                             :component/id 4
                             :layout/partition :column
-                            :layout/magnitude 150
-                            :layout/min-magnitude 140
+                            :layout/magnitude 100
+                            :layout/min-magnitude 80
+                            :layout/active? true
+                            :layout/variable? true
+                            :layout/inner? true
+                            :style/backgroundColor "grey"}
+                           {:tags [:component/resize-layout
+                                   :structure/flex-column
+                                   :structure/style]
+                            :component/id 4
+                            :layout/partition :column
+                            :layout/magnitude 100
+                            :layout/min-magnitude 80
                             :layout/active? true
                             :layout/variable? true
                             :layout/inner? true
@@ -61,8 +72,8 @@
                                    :component/resize-layout]
                             :component/id 5
                             :layout/partition :column
-                            :layout/magnitude 150
-                            :layout/min-magnitude 140
+                            :layout/magnitude 100
+                            :layout/min-magnitude 80
                             :layout/active? true
                             :layout/variable? true
                             :layout/inner? true
