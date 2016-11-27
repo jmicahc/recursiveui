@@ -16,17 +16,22 @@
           (next node)))
 
 
-
 (defn- layout-nav
   ([node]
    (with-paths
      (comp (filter :layout/active?)
-           (filter :layout/inner?))
+           (mapcat (fn [node]
+                     (if (:layout/inner? node)
+                       (list node)
+                       (layout-nav (:children node))))))
      node))
   ([xf node]
    (with-paths
-     (comp (filter :layout/active?)
-           (filter :layout/inner?)
+     (comp (mapcat (fn [node]
+                     (if (:layout/inner? node)
+                       (list node)
+                       (with-paths xf node))))
+           (filter :layout/active?)
            xf)
      node)))
 
@@ -46,7 +51,6 @@
 
 
 
-
 (defn- height-equations
   ([{:keys [layout/magnitude
             layout/partition
@@ -60,83 +64,29 @@
  
 
 
+
 (defn- out-of-bounds?
   [dx {:keys [layout/magnitude
               layout/min-magnitude
               layout/max-magnitude]
-       :or {max-magnitude 1500}
        :as term}]
-  (let [ret (or (<= (+ dx magnitude) min-magnitude)
-                (>= (+ dx magnitude) max-magnitude))]
-    (println "out-of-bounds?" ret)
-    ret))
+  (or (and min-magnitude (<= (+ dx magnitude) min-magnitude))
+      (and max-magnitude (>= (+ dx magnitude) max-magnitude))))
 
-
-
-#_(defn- solve-equations
-  [eqs delta]
-  (letfn [(solve-eq [eq]
-            (let [dx delta]
-              (reduce (fn [ret {:keys [layout/magnitude
-                                       layout/min-magnitude
-                                       layout/max-magnitude]
-                                :or {max-magnitude 2000}
-                                :as term}]
-                        (cond (<= (+ delta magnitude) min-magnitude)
-                              (conj ret (assoc term :layout/magnitude min-magnitude))
-
-                              (>= (+ delta magnitude) max-magnitude)
-                              (conj ret (assoc term :layout/magnitude max-magnitude))
-
-                              :else
-                              (conj ret (assoc term :layout/magnitude (+ delta magnitude)))))
-                      []
-                      eq)))]
-    (mapv solve-eq eqs)))
-
-
-(defn calc-freq [eq dx]
-  (count (remove (partial out-of-bounds? dx) eq)))
 
 
 (defn- solve-equations
   [eqs dx]
-  (letfn [(solve-equation [eq delta]
+  (letfn [(remove-out-of-bounds [eq]
+            (remove (partial out-of-bounds? (/ dx (count eq))) eq))
+          (solve-equation [eq]
             (let [freq (count eq)
-                  x    (/ delta freq)]
+                  x    (/ dx freq)]
               (mapv (fn [term] (update term :layout/magnitude + x)) eq)))]
-    (mapv (fn [eq] (solve-equation eq dx)) eqs)))
-
-
-#_(defn- solve-equations
-  [eqs delta]
-  (letfn [(solve-eq [eq dx freq]
-            (reduce (fn [ret {:keys [layout/magnitude
-                                     layout/min-magnitude
-                                     layout/max-magnitude]
-                              :or {max-magnitude 900}
-                              :as term}]
-                      (cond (<= (+ dx magnitude) min-magnitude)
-                            (conj (solve-eq ret
-                                            (/ (+ delta (- magnitude min-magnitude))
-                                               (dec freq))
-                                            (dec freq))
-                                  (assoc term :layout/magnitude min-magnitude))
-
-                            (>= (+ dx magnitude) max-magnitude)
-                            (conj (solve-eq ret
-                                            (/ (- delta (- magnitude max-magnitude))
-                                               (dec freq))
-                                            (dec freq))
-                                  (assoc term :layout/magnitude max-magnitude))
-
-                            :else
-                            (conj ret (assoc term :layout/magnitude (+ dx magnitude)))))
-                    []
-                    eq))]
-    (mapv (fn [eq] (solve-eq eq (/ delta (count eq)) (count eq))) eqs)))
-
-
+    (into []
+          (comp (map remove-out-of-bounds)
+                (map solve-equation))
+          eqs)))
 
 
 
@@ -153,8 +103,6 @@
 
 
 
-
-
 (defn- layout-update-width
   [node dx]
   (-> (width-equations node)
@@ -163,14 +111,13 @@
 
 
 
-
-
 (defn- layout-update-height
   [node dy]
   (-> (height-equations node)
       (solve-equations  dy)
+      ((fn [eqs]
+         eqs))
       (equations->tree  node)))
-
 
 
 
@@ -183,7 +130,6 @@
 
 (defn- has-parent? [node]
   (>= (count (:path node)) 2))
-
 
 
 
@@ -221,65 +167,14 @@
         resized-left (layout-update-height left-subtree dy)
         resized-right (layout-update-height right-subtree (- dy))
         new-children (into (:children resized-left) (:children resized-right))]
-    (if (empty? parent-path)
-      (assoc state :children new-children)
-      (update-in state parent-path assoc :children new-children))))
+    (if (or (= resized-left left-subtree)
+            (= resized-right right-subtree))
+      state
+      (if (empty? parent-path)
+        (assoc state :children new-children)
+        (update-in state parent-path assoc :children new-children)))))
 
 
-#_(defn layout-resize-height
-  [state {:keys [node delta/dy] :as m}]
-  {:pre [(has-parent? node)
-         (not (nil? dy))]}
-  (let [parent-path (-> (:path node) pop pop)
-        parent (get-in state parent-path)
-        index (peek (:path node))
-        left-subtree (subtree parent 0 index)
-        right-subtree (subtree parent index)
-        left-equations (height-equations left-subtree)
-        right-equations (height-equations right-subtree)
-        real-left-delta (adjust-delta left-equations dy)
-        real-right-delta (adjust-delta right-equations (- dy))
-        real-delta (if (< (Math/abs real-left-delta)
-                          (Math/abs real-right-delta))
-                     real-left-delta
-                     real-right-delta)
-        solved-left (solve-equations left-equations (- real-delta))
-        solved-right (solve-equations right-equations real-delta)
-        left-children (:children (equations->tree solved-left left-subtree))
-        right-children (:children (equations->tree solved-right right-subtree))
-        new-children (into left-children right-children)]
-    (if (empty? parent-path)
-      (assoc state :children new-children)
-      (update-in state parent-path assoc :children new-children))))
-
-
-#_(defn layout-resize-width
-  [state {:keys [node delta/dx] :as m}]
-  {:pre [(has-parent? node)
-         (not (nil? dx))]}
-  (let [parent-path (-> (:path node) pop pop)
-        parent (get-in state parent-path)
-        index (peek (:path node))
-        left-subtree (subtree parent 0 index)
-        right-subtree (subtree parent index)
-        left-equations (width-equations left-subtree)
-        right-equations (width-equations right-subtree)
-        real-left-delta (adjust-delta left-equations dx)
-        real-right-delta (adjust-delta right-equations (- dx))
-        real-delta (if (< (Math/abs real-left-delta)
-                          (Math/abs real-right-delta))
-                     real-left-delta
-                     real-right-delta)
-        solved-left (solve-equations left-equations (- real-delta))
-        solved-right (solve-equations right-equations real-delta)
-        left-children (:children (equations->tree solved-left left-subtree))
-        right-children (:children (equations->tree solved-right right-subtree))
-        new-children (into left-children right-children)]
-    #_(println "real delta" real-delta)
-    #_(println "real left delta" real-left-delta)
-    (if (empty? parent-path)
-      (assoc state :children new-children)
-      (update-in state parent-path assoc :children new-children))))
 
 
 (defn layout-resize-width
@@ -294,13 +189,19 @@
         resized-left (layout-update-width left-subtree dx)
         resized-right (layout-update-width right-subtree (- dx))
         new-children (into (:children resized-left) (:children resized-right))]
-    (println "hello")
-    (if (empty? parent-path)
-      (assoc state :children new-children)
-      (update-in state parent-path assoc :children new-children))))
+    (if (or (= resized-left left-subtree)
+            (= resized-right right-subtree))
+      state
+      (if (empty? parent-path)
+        (assoc state :children new-children)
+        (update-in state parent-path assoc :children new-children)))))
 
 
-
+#_(defn layout-resize-width
+  [state {:keys [node delta/dx] :as m}]
+  (cond (pos? dx) (layout-resize-width+ state m)
+        (neg? dx) (layout-resize-width- state m)
+        :else state))
 
 
 (defn layout-resize
@@ -319,6 +220,7 @@
     (if (empty? parent-path)
       (assoc state :children new-children)
       (update-in state parent-path assoc :children new-children))))
+
 
 
 
@@ -360,10 +262,12 @@
   (update-in state
              (:path node)
              (fn [node]
-               (-> node
-                   (update :layout/left + dx)
-                   (update :layout/width - dx)
-                   (layout-update-width (- dx))))))
+               (let [resized (layout-update-width node (- dx))]
+                 (if (= resized node) node
+                     (-> node
+                         (update :layout/left + dx)
+                         (update :layout/width - dx)
+                         (layout-update-width (- dx))))))))
 
 
 
@@ -374,9 +278,11 @@
   (update-in state
              (:path node)
              (fn [node]
-               (-> node
-                   (update :layout/width + dx)
-                   (layout-update-width dx)))))
+               (let [resized (layout-update-width node dx)]
+                 (if (= resized node) node
+                     (-> node
+                         (update :layout/width + dx)
+                         (layout-update-width dx)))))))
 
 
 
@@ -387,9 +293,11 @@
   (update-in state
              (:path node)
              (fn [node]
-               (-> node
-                   (update :layout/height + dy)
-                   (layout-update-height dy)))))
+               (let [resized (layout-update-height node dy)]
+                 (if (= resized node) node
+                     (-> node
+                         (update :layout/height + dy)
+                         (layout-update-height dy)))))))
 
 
 
@@ -399,10 +307,11 @@
   (update-in state
              (:path node)
              (fn [node]
-               (-> node
-                   (update :layout/top + dy)
-                   (update :layout/height - dy)
-                   (layout-update-height (- dy))))))
+               (let [resized (layout-update-height node (- dy))]
+                 (if (= resized node) node
+                     (-> resized
+                         (update :layout/top + dy)
+                         (update :layout/height - dy)))))))
 
 
 

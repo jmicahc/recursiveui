@@ -14,6 +14,7 @@
    {:tags [:structure/style :structure/flex-root]
     :type :basic-element
     :component/id 1
+    :traverse/render? true
     :layout/inner? false
     :layout/partition :column
     :layout/variable? true
@@ -26,6 +27,7 @@
     :children [{:tags [:structure/flex-row
                        :structure/style]
                 :component/id 2
+                :traverse/render? true
                 :layout/partition :row
                 :layout/magnitude 100
                 :layout/min-magnitude 40
@@ -37,29 +39,19 @@
                 :children [{:tags [:structure/flex-column
                                    :structure/style]
                             :component/id 3
+                            :traverse/render? true
                             :layout/partition :column
                             :layout/active? true
                             :layout/variable? true
                             :layout/inner? true
                             :layout/magnitude 200
-                            ;; :layout/max-magnitude 300
                             :layout/min-magnitude 50
                             :style/backgroundColor "blue"}
                            {:tags [:component/resize-layout
                                    :structure/flex-column
                                    :structure/style]
                             :component/id 4
-                            :layout/partition :column
-                            :layout/magnitude 100
-                            :layout/min-magnitude 80
-                            :layout/active? true
-                            :layout/variable? true
-                            :layout/inner? true
-                            :style/backgroundColor "grey"}
-                           {:tags [:component/resize-layout
-                                   :structure/flex-column
-                                   :structure/style]
-                            :component/id 4
+                            :traverse/render? true
                             :layout/partition :column
                             :layout/magnitude 100
                             :layout/min-magnitude 80
@@ -71,9 +63,22 @@
                                    :structure/style
                                    :component/resize-layout]
                             :component/id 5
+                            :traverse/render? true
                             :layout/partition :column
                             :layout/magnitude 100
-                            :layout/min-magnitude 80
+                            :layout/min-magnitude 50
+                            :layout/active? true
+                            :layout/variable? true
+                            :layout/inner? true
+                            :style/backgroundColor "grey"}
+                           {:tags [:structure/flex-column
+                                   :structure/style
+                                   :component/resize-layout]
+                            :component/id 5
+                            :traverse/render? true
+                            :layout/partition :column
+                            :layout/magnitude 100
+                            :layout/min-magnitude 30
                             :layout/active? true
                             :layout/variable? true
                             :layout/inner? true
@@ -83,6 +88,7 @@
                        :component/resize-layout]
                 :layout/partition :row
                 :component/id 6
+                :traverse/render? true
                 :layout/active? true
                 :layout/inner? true
                 :layout/magnitude 600
@@ -98,6 +104,7 @@
                        :structure/style
                        :structure/border]
                 :component/id 7
+                :traverse/render? true
                 :layout/partition :column
                 :layout/active? true
                 :layout/inner? false
@@ -110,6 +117,7 @@
                 :children [{:tags [:structure/flex-row
                                    :structure/style]
                             :component/id 8
+                            :traverse/render? true
                             :layout/partition :row
                             :layout/magnitude 100
                             :layout/min-magnitude 60
@@ -120,17 +128,20 @@
                             :children [{:tags [:structure/flex-column
                                                :structure/style]
                                         :component/id 9
+                                        :traverse/render? true
                                         :layout/partition :column
                                         :layout/active? true
                                         :layout/variable? true
                                         :layout/inner? true
                                         :layout/magnitude 200
-                                        :layout/min-magnitude 10
+                                        :layout/max-magnitude 300
+                                        :layout/min-magnitude 50
                                         :style/backgroundColor "blue"}
                                        {:tags [:structure/flex-column
                                                :structure/style
                                                :component/resize-layout]
                                         :component/id 10
+                                        :traverse/render? true
                                         :layout/partition :column
                                         :layout/magnitude 150
                                         :layout/min-magnitude 45
@@ -142,6 +153,7 @@
                                                :structure/style
                                                :component/resize-layout]
                                         :component/id 11
+                                        :traverse/render? true
                                         :layout/partition :column
                                         :layout/magnitude 150
                                         :layout/min-magnitude 50
@@ -153,10 +165,11 @@
                                    :structure/style
                                    :component/resize-layout]
                             :component/id 12
+                            :traverse/render? true
                             :layout/partition :row
                             :layout/active? true
                             :layout/inner? true
                             :layout/magnitude 600
                             :layout/min-magnitude 60
-                            :style/backgroundColor "orange"
+                            :style/backgroundColor "green"
                             :layout/variable? true}]}]}))

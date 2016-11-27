@@ -212,7 +212,6 @@
 
 
 (defn style-element
-  "temporary"
   [cf]
   (fn
     ([] (cf))
