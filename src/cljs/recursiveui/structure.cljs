@@ -19,7 +19,7 @@
                 :height magnitude
                 :display "flex"
                 :position "relative"
-                :flexDiretion "row")))))
+                :flexDirection "row")))))
 
 
 
@@ -34,7 +34,7 @@
                 :width magnitude
                 :display "flex"
                 :position "relative"
-                :flexDiretion "column")))))
+                :flexDirection "column")))))
 
 
 
@@ -194,6 +194,28 @@
                      (.stopPropagation e)
                      (command/update! command/layout-fullscreen {:node node}))))))))
 
+
+
+
+(defn conjoin-button [cf]
+  (fn
+    ([] (cf))
+    ([node] (cf node))
+    ([node ch elem]
+     (cf node ch
+         (-> elem
+             (conj [:div {:class "conjoin-button"
+                          :onClick (fn [e]
+                                     (.stopPropagation e)
+                                     (println "hello world")
+                                     (command/update! command/layout-conjoin {:node node}))
+                          :style {:width 20
+                                  :zIndex 10
+                                  :height 20
+                                  :right 10
+                                  :top 10
+                                  :backgroundColor "red"
+                                  :position "absolute"}}]))))))
 
 
 

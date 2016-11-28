@@ -25,7 +25,8 @@
     :layout/left 0
     :style/backgroundColor "red"
     :children [{:tags [:structure/flex-row
-                       :structure/style]
+                       :structure/style
+                       :structure/conjoin-button]
                 :component/id 2
                 :traverse/render? true
                 :layout/partition :row
@@ -54,7 +55,7 @@
                             :traverse/render? true
                             :layout/partition :column
                             :layout/magnitude 100
-                            :layout/min-magnitude 80
+                            :layout/min-magnitude 20
                             :layout/active? true
                             :layout/variable? true
                             :layout/inner? true
@@ -66,7 +67,7 @@
                             :traverse/render? true
                             :layout/partition :column
                             :layout/magnitude 100
-                            :layout/min-magnitude 50
+                            :layout/min-magnitude 20
                             :layout/active? true
                             :layout/variable? true
                             :layout/inner? true
@@ -78,7 +79,7 @@
                             :traverse/render? true
                             :layout/partition :column
                             :layout/magnitude 100
-                            :layout/min-magnitude 30
+                            :layout/min-magnitude 20
                             :layout/active? true
                             :layout/variable? true
                             :layout/inner? true

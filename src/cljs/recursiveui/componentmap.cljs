@@ -13,6 +13,7 @@
    :structure/style                     structure/style-element
    :structure/sidebar-left              structure/sidebar-left
    :structure/sidebar-top               structure/sidebar-top
+   :structure/conjoin-button            structure/conjoin-button
    :structure/border                    structure/border
    :component/layout-resize-root-left   component/layout-resize-root-left
    :component/layout-resize-root-right  component/layout-resize-root-right

@@ -1,5 +1,5 @@
 (ns recursiveui.element
-  (:require [cljs.core.async :refer [put! pipe chan]]))
+  (:require [cljs.core.async :refer [put! pipe chan close!]]))
 
 
 (def base-element [:div {}])
