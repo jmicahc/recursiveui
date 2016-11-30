@@ -31,7 +31,7 @@
 
 (defn root-component [state]
   (fn []
-    (let [ch (chan)
+    (let [ch nil
           ret (render ch @state)]
       [:div {:id "root-elem"} ret])))
 
@@ -40,7 +40,6 @@
 (defn reload []
   (reagent/render [root-component data/state]
                   (.getElementById js/document "app")))
-
 
 
 

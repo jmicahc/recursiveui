@@ -3,6 +3,7 @@
                  [org.clojure/clojurescript "1.9.229"]
                  [reagent "0.6.0" :exclusions [cljsjs/react-dom cljsjs/react-dom-server]]
                  [cljsjs/react-dom "15.4.0-0"]
+                 [sablono "0.7.6"]
                  [cljsjs/react-dom-server "15.4.0-0"]]
 
   :min-lein-version "2.5.3"

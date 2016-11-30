@@ -14,7 +14,9 @@
    :structure/sidebar-left              structure/sidebar-left
    :structure/sidebar-top               structure/sidebar-top
    :structure/conjoin-button            structure/conjoin-button
+   :structure/layout-sidebar            structure/layout-sidebar
    :structure/border                    structure/border
+   :event/layout-resize-delta           event/layout-resize-delta
    :component/layout-resize-root-left   component/layout-resize-root-left
    :component/layout-resize-root-right  component/layout-resize-root-right
    :component/layout-resize-root-bottom component/layout-resize-root-bottom
