@@ -5,60 +5,15 @@
 (def base-element [:div {}])
 
 
-
-(defn attr [elem k v & kvs]
-  (apply update elem 1 assoc k v kvs))
-
-
-
-(defn style [elem k v & kvs]
-  (apply update-in elem [1 :style] assoc k v kvs))
-
-
-
-(defn tag [name]
-  (fn [elem]
-    (assoc elem 0 name)))
-
-
-
-(defn class [elem s]
-  (update-in elem [1 :class] str " " s))
+(defn style [node k v & kvs]
+  (apply update
+         node
+         :element/style
+         assoc
+         k v kvs))
 
 
 
 (def dom-event? #{:onClick :onMouseDown :onMouseMove :onDoubleClick :onMouseUp})
 
 
-
-(defn event [elem node ch k f & kfs]
-  (update elem 1
-          (partial merge-with comp)
-          (into {}
-                (for [[k xf] (partition 2 (list* k f kfs))
-                      :let [transform (chan 1 xf)]]
-                  (do (pipe transform ch)
-                      [k (fn [e]
-                           (.stopPropagation e)
-                           (.preventDefault e)
-                           (put! transform {:event e
-                                            :node node
-                                            :name (keyword (.-name e))})
-                           e)])))))
-
-
-
-
-
-(defn conjoin [xf & xfs]
-  (fn [rf]
-    (fn
-      ([] (rf))
-      ([node] (((apply comp xf xfs) rf) node))
-      ([node ch elem]
-       (rf node ch
-           (apply conj
-                  elem
-                  (map (fn [f]
-                         ((f (fn [a b c] c)) node ch base-element))
-                       (cons xf xfs))))))))

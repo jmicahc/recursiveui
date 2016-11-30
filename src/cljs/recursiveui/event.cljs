@@ -22,6 +22,7 @@
 
 
 
+
 (def delta-y
   (comp (map (fn [[a b]]
                (let [event-a (:event a)
@@ -29,6 +30,7 @@
                      delta-y (- (.-clientY event-a) (.-clientY event-b))]
                  (assoc a :delta/dy delta-y))))
         (partition-all 2)))
+
 
 
 
@@ -45,8 +47,9 @@
 
 
 
+
 (defn event-loop []
   (go-loop []
-    (let [event (<! event-channel)]
-      (println event)
+    (let [{:keys [path] :as msg}
+          (<! event-channel)]
       (recur))))
