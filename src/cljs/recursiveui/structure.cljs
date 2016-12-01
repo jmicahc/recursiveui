@@ -1,65 +1,142 @@
 (ns recursiveui.structure
-  (:require [recursiveui.element :as elem
-             :refer [attr style tag conjoin class event]]
-            [recursiveui.types :as types]
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require [recursiveui.types :as types]
             [recursiveui.event :as event]
             [recursiveui.command :as command]
-            [cljs.core.async :refer [chan]]))
+            [recursiveui.listeners :as listeners]
+            [cljs.core.async :refer [chan put! <! take!]]
+            [goog.events :refer [listen unlisten]]))
+
+
+
+(defn flex-row
+  [{:keys [layout/magnitude]
+    :as node}]
+  (update node
+          :element/style
+          assoc
+          :height magnitude
+          :display "flex"
+          :position "relative"
+          :flexDirection "row"))
 
 
 
 
-(defn flex-row [rf]
-  (fn
-    ([] (rf))
-    ([buff] (rf buff))
-    ([buff {:keys [node name] :as msg}]
-     (rf node
-         (case name
-           :render (assoc msg
-                          :node
-                          (style node
-                                 :height (:layout/magnitude node)
-                                 :position "relative"
-                                 :flexDirection "row"))
-           msg)))))
+
+(defn flex-column
+  [{:keys [layout/magnitude]
+    :as node}]
+  (update node
+          :element/style
+          assoc
+          :width magnitude
+          :display "flex"
+          :position "relative"
+          :flexDirection "column"))
 
 
 
 
-(defn flex-column [rf]
-  (fn
-    ([] (rf))
-    ([buff] (rf buff))
-    ([buff {:keys [name node] :as msg}]
-     (case name
-       :render (rf buff
-                   (assoc msg
-                          (style node
-                                 :width (:layout/magnitude node)
-                                 :display "flex"
-                                 :flexDirection "column"))))
-     (rf buff msg))))
+(defn flex-root
+  [{:keys [layout/top
+           layout/left
+           layout/width
+           layout/height
+           layout/flex-direction]
+    :as node}]
+  (update node
+          :element/style
+          assoc
+          :position "absolute"
+          :flexDirection flex-direction
+          :width width
+          :height height
+          :top top
+          :left left))
 
 
 
-(defn flex-root [rf]
-  (fn
-    ([] (rf))
-    ([buff] (rf buff))
-    ([buff {:keys [name node] :as msg}]
-     (let [{:keys [layout/width layout/height
-                   layout/top   layout/left
-                   layout/flex-direction]} node]
-       (case name
-         :render (rf buff
-                     (update msg
-                             :node
-                             style
-                             :width width
-                             :height height
-                             :top top
-                             :left left
-                             :display "flex"
-                             :flexDirection flex-Direction))
-         (rf buff msg))))))
+(def resizable-flex-root
+  (comp flex-root
+        listeners/layout-resize-root-handler
+        (fn [node]
+          (update node
+                  :children
+                  conj
+                  {:tags #{:structure/sidebar-top
+                           :listeners/layout-resize-top-source}
+                   :traverse/render? true}
+                  {:tags #{:structure/sidebar-left
+                           :listeners/layout-resize-left-source}
+                   :traverse/render? true}
+                  {:tags #{:structure/sidebar-right
+                           :listeners/layout-resize-right-source}
+                   :traverse/render? true}
+                  {:tags #{:structure/sidebar-bottom
+                           :listeners/layout-resize-bottom-source}
+                   :traverse/render? true}))))
+
+
+
+(defn sidebar-left
+  "temporary"
+  [node]
+  (-> (update node
+              :element/style
+              assoc
+              :backgroundColor "brown"
+              :position "absolute"
+              :top 0
+              :left 0
+              :width "8px"
+              :height "100%"
+              :opacity "9px")))
+
+
+
+
+(defn sidebar-top
+  "temporary"
+  [node]
+  (update node
+          :element/style
+          assoc
+          :backgroundColor "brown"
+          :position "absolute"
+          :left "0px"
+          :top "0px"
+          :height "9px"
+          :botttom "6px"
+          :width "100%"
+          :opacity 1))
+
+
+
+(defn sidebar-right
+  "temporary"
+  [node]
+  (update node
+          :element/style
+          assoc
+          :backgroundColor "brown"
+          :position "absolute"
+          :top "0px"
+          :right "0px"
+          :height "100%"
+          :width "8px"
+          :opacity "1"))
+
+
+(defn sidebar-bottom
+  "temporary"
+  [node]
+  (update node
+          :element/style
+          assoc
+          :backgroundColor "brown"
+          :position "absolute"
+          :bottom "0px"
+          :width "100%"
+          :height "8px"
+          :opacity "1"))

@@ -1,13 +1,12 @@
 (ns recursiveui.data
-  (:require [reagent.core :as reagent]
-            [cljs.core.async :as async :refer
-             [chan dropping-buffer]]))
+  (:require [reagent.core :as reagent]))
 
 
 (def state
   (reagent/atom
-   {:tags #{:structure/style
-            :structure/flex-root}
+   {:tags #{:structure/flex-root}
+    :element/style {:backgroundColor "red"}
+    :element/attr {}
     :element/type :div
     :component/id 1
     :traverse/render? true
@@ -19,9 +18,9 @@
     :layout/height 700
     :layout/top 0
     :layout/left 0
-    :style/backgroundColor "red"
     :children [{:tags #{:structure/flex-row}
                 :component/id 2
+                :element/style {:backgroundColor "green"}
                 :traverse/render? true
                 :layout/partition :row
                 :layout/magnitude 100
@@ -30,10 +29,7 @@
                 :layout/active? true
                 :layout/variable? true
                 :layout/inner? true
-                :style/backgroundColor "green"
-                :children [{:tags #{:structure/conjoin-button}
-                            :traverse/render? true}
-                           {:tags #{:structure/flex-column}
+                :children [{:tags #{:structure/flex-column}
                             :element/type :div
                             :element/style {:backgroundColor "blue"}
                             :component/id 3
@@ -45,7 +41,8 @@
                             :layout/magnitude 200
                             :layout/min-magnitude 50
                             :style/backgroundColor "blue"}
-                           {:tags #{:structure/flex-column}
+                           {:tags #{:structure/flex-column
+                                    :listeners/layout-resize-handler}
                             :component/id 4
                             :traverse/render? true
                             :element/style {:backgroundColor "grey"}
@@ -56,11 +53,11 @@
                             :layout/variable? true
                             :layout/inner? true
                             :style/backgroundColor "grey"
-                            :children [{:tags #{:structure/layout-sidebar}
-                                        :element/type :div
-                                        :element/union? true
+                            :children [{:tags #{:structure/sidebar-left
+                                                :listeners/layout-resize-source}
                                         :traverse/render? true}]}
-                           {:tags #{:structure/flex-column}
+                           {:tags #{:structure/flex-column
+                                    :listeners/layout-resize-handler}
                             :component/id 5
                             :traverse/render? true
                             :element/style {:backgroundColor "grey"}
@@ -69,8 +66,12 @@
                             :layout/min-magnitude 20
                             :layout/active? true
                             :layout/variable? true
-                            :layout/inner? true}
-                           {:tags #{:structure/flex-column}
+                            :layout/inner? true
+                            :children [{:tags #{:structure/sidebar-left
+                                                :listeners/layout-resize-source}
+                                        :traverse/render? true}]}
+                           {:tags #{:structure/flex-column
+                                    :listeners/layout-resize-handler}
                             :component/id 5
                             :element/style {:backgroundColor "grey"}
                             :traverse/render? true
@@ -80,13 +81,12 @@
                             :layout/active? true
                             :layout/variable? true
                             :layout/inner? true
-                            :children [{:tags #{:structure/layout-sidebar}
-                                        :element/events {:onClick :layout/resize}
-                                        :layout/resize-event? true
-                                        :element/type :div
-                                        :element/union? true
+                            :children [{:tags #{:structure/sidebar-left
+                                                :listeners/layout-resize-source}
+                                        :messages {:onMouseDown :layout/resize}
                                         :traverse/render? true}]}]}
-               {:tags #{:structure/flex-row}
+               {:tags #{:structure/flex-row
+                        :listeners/layout-resize-handler}
                 :layout/partition :row
                 :component/id 6
                 :element/style {:backgroundColor "orange"}
@@ -96,15 +96,11 @@
                 :layout/magnitude 600
                 :layout/min-magnitude 60
                 :layout/variable? true
-                :children [{:tags #{:structure/layout-sidebar}
-                            :events #{:onClick
-                                      :onDoubleClick
-                                      :onZoom}
-                            :element/type :div
-                            :element/union? true
+                :children [{:tags #{:structure/sidebar-top
+                                    :listeners/layout-resize-source}
+                            :events #{:layout/resize}
                             :traverse/render? true}]}
-               {:tags #{:structure/flex-root
-                        :structure/border}
+               {:tags #{:component/resizable-flex-root}
                 :component/id 7
                 :traverse/render? true
                 :element/style {:backgroundColor "grey"}
@@ -116,31 +112,18 @@
                 :layout/height 700
                 :layout/top 100
                 :layout/left 100
-                :style/backgroundColor "grey"
-                :children [{:tags #{}
-                            :element/style {:width "100%"
-                                            :height 40
-                                            :top -3
-                                            :left -3
-                                            :position "absolute"
-                                            :backgroundColor "grey"
-                                            :zIndex 5
-                                            :borderColor "#181319"
-                                            :border "solid"}
-                            :traverse/render? true}
-                           {:tags #{:structure/flex-row
-                                    :structure/style}
+                :children [{:tags #{:structure/flex-row}
                             :component/id 8
+                            :element/style {:backgroundColor "green"}
                             :traverse/render? true
                             :layout/partition :row
                             :layout/magnitude 100
                             :layout/min-magnitude 60
                             :layout/active? true
-                            :layout/variable? false
+                            :layout/variable? true
                             :layout/inner? true
-                            :style/backgroundColor "green"
-                            :children [{:tags #{:structure/flex-column
-                                                :structure/style}
+                            :children [{:tags #{:structure/flex-column}
+                                        :element/style {:backgroundColor "blue"}
                                         :component/id 9
                                         :traverse/render? true
                                         :layout/partition :column
@@ -149,21 +132,24 @@
                                         :layout/inner? true
                                         :layout/magnitude 200
                                         :layout/max-magnitude 300
-                                        :layout/min-magnitude 50
-                                        :style/backgroundColor "blue"}
+                                        :layout/min-magnitude 50}
                                        {:tags #{:structure/flex-column
-                                                :structure/style}
+                                                :listeners/layout-resize-handler}
+                                        :element/style {:backgroundColor "grey"}
                                         :component/id 10
                                         :traverse/render? true
                                         :layout/partition :column
                                         :layout/magnitude 150
                                         :layout/min-magnitude 45
                                         :layout/active? true
-                                        :layout/variable? false
+                                        :layout/variable? true
                                         :layout/inner? true
-                                        :style/backgroundColor "grey"}
+                                        :children [{:tags #{:listeners/layout-resize-source
+                                                            :structure/sidebar-left}
+                                                    :traverse/render? true}]}
                                        {:tags #{:structure/flex-column
-                                                :structure/style}
+                                                :listeners/layout-resize-handler}
+                                        :element/style {:backgroundColor "grey"}
                                         :component/id 11
                                         :traverse/render? true
                                         :layout/partition :column
@@ -172,15 +158,20 @@
                                         :layout/active? true
                                         :layout/variable? true
                                         :layout/inner? true
-                                        :style/backgroundColor "grey"}]}
-                           {:tags [:structure/flex-row
-                                   :structure/style]
+                                        :children [{:tags #{:structure/sidebar-left
+                                                            :listeners/layout-resize-source}
+                                                    :traverse/render? true}]}]}
+                           {:tags #{:structure/flex-row
+                                    :listeners/layout-resize-handler}
                             :component/id 12
+                            :element/style {:backgroundColor "green"}
                             :traverse/render? true
                             :layout/partition :row
                             :layout/active? true
                             :layout/inner? true
                             :layout/magnitude 600
                             :layout/min-magnitude 60
-                            :style/backgroundColor "green"
-                            :layout/variable? true}]}]}))
+                            :layout/variable? true
+                            :children [{:tags #{:structure/sidebar-top
+                                                :listeners/layout-resize-source}
+                                        :traverse/render? true}]}]}]}))

@@ -121,13 +121,10 @@
 
 
 
-
 (defn- layout-update-height
   [node dy]
   (-> (height-equations node)
       (solve-equations  dy)
-      ((fn [eqs]
-         eqs))
       (equations->tree  node)))
 
 
@@ -219,6 +216,7 @@
 
 
 
+
 (defn layout-resize
   ([state {:keys [node delta/dx delta/dy] :as m}]
    (layout-resize state node dx dy))
@@ -244,6 +242,7 @@
 
 
 
+
 (defn resize-root-left
   ([state {:keys [node delta/dx] :as msg}]
    (resize-root-left state node dx))
@@ -257,6 +256,7 @@
                           (update :layout/left + dx)
                           (update :layout/width - dx)
                           (layout-update-width (- dx)))))))))
+
 
 
 
@@ -279,6 +279,7 @@
 
 
 
+
 (defn resize-root-bottom
   ([state {:keys [node delta/dy] :as msg}]
    (resize-root-bottom state node dy))
@@ -291,6 +292,7 @@
                       (-> node
                           (update :layout/height + dy)
                           (layout-update-height dy))))))))
+
 
 
 
@@ -311,6 +313,7 @@
 
 
 
+
 (defn layout-drag
   [state {:keys [node delta/dx delta/dy] :as msg}]
   (let [path (:path node)
@@ -321,6 +324,7 @@
     (if (empty? path)
       (update-fn state)
       (update-in state path update-fn))))
+
 
 
 
@@ -342,6 +346,7 @@
 
 
 
+
 (defn layout-conjoin
   ([state {:keys [node] :as msg}]
    (layout-conjoin state node (last (:children node))))
@@ -355,5 +360,10 @@
                       (layout-update-width (- dx))))))))
 
 
-(defn update! [f node]
-  (swap! data/state f node))
+
+
+(defn update!
+  ([{:keys [command] :as msg}]
+   (update! command msg))
+  ([f msg]
+   (swap! data/state f msg)))
