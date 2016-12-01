@@ -57,42 +57,19 @@
 
 
 
-(def resizable-flex-root
-  (comp flex-root
-        listeners/layout-resize-root-handler
-        (fn [node]
-          (update node
-                  :children
-                  conj
-                  {:tags #{:structure/sidebar-top
-                           :listeners/layout-resize-top-source}
-                   :traverse/render? true}
-                  {:tags #{:structure/sidebar-left
-                           :listeners/layout-resize-left-source}
-                   :traverse/render? true}
-                  {:tags #{:structure/sidebar-right
-                           :listeners/layout-resize-right-source}
-                   :traverse/render? true}
-                  {:tags #{:structure/sidebar-bottom
-                           :listeners/layout-resize-bottom-source}
-                   :traverse/render? true}))))
-
-
-
 (defn sidebar-left
   "temporary"
   [node]
-  (-> (update node
-              :element/style
-              assoc
-              :backgroundColor "brown"
-              :position "absolute"
-              :top 0
-              :left 0
-              :width "8px"
-              :height "100%"
-              :opacity "9px")))
-
+  (update node
+          :element/style
+          assoc
+          :backgroundColor "brown"
+          :position "absolute"
+          :top 0
+          :left 0
+          :width "8px"
+          :height "100%"
+          :opacity "9px"))
 
 
 
@@ -113,6 +90,7 @@
 
 
 
+
 (defn sidebar-right
   "temporary"
   [node]
@@ -126,6 +104,8 @@
           :height "100%"
           :width "8px"
           :opacity "1"))
+
+
 
 
 (defn sidebar-bottom

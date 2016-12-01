@@ -111,7 +111,6 @@
 
 
 
-
 (defn- layout-update-width
   [node dx]
   (-> (width-equations node)

@@ -99,7 +99,6 @@
 
 
 
-
 (defn layout-resize-bottom-source
   [node]
   (update node
