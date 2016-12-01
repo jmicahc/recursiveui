@@ -1,19 +1,21 @@
-(ns recursiveui.element
-  (:require [cljs.core.async :refer [put! pipe chan close!]]))
+(ns recursiveui.element)
 
 
-(def base-element [:div {}])
+(defn class [node s & ss]
+  (assoc-in node
+            [:element/attr :class]
+            (apply str (interpose " " (cons s  ss)))))
+
+
+(defn attr [node k v & kvs]
+  (apply update node :element/attr assoc k v kvs))
+
 
 
 (defn style [node k v & kvs]
-  (apply update
-         node
-         :element/style
-         assoc
-         k v kvs))
+  (apply update node :element/style assoc k v kvs))
 
 
 
-(def dom-event? #{:onClick :onMouseDown :onMouseMove :onDoubleClick :onMouseUp})
-
-
+(defn tag [node t]
+  (assoc node :element/type t))

@@ -251,10 +251,9 @@
               (fn [node]
                 (let [resized (layout-update-width node (- dx))]
                   (if (= resized node) node
-                      (-> node
+                      (-> resized
                           (update :layout/left + dx)
-                          (update :layout/width - dx)
-                          (layout-update-width (- dx)))))))))
+                          (update :layout/width - dx))))))))
 
 
 
@@ -270,9 +269,7 @@
               (fn [node]
                 (let [resized (layout-update-width node dx)]
                   (if (= resized node) node
-                      (-> node
-                          (update :layout/width + dx)
-                          (layout-update-width dx))))))))
+                      (update resized :layout/width + dx)))))))
 
 
 
@@ -288,9 +285,7 @@
               (fn [node]
                 (let [resized (layout-update-height node dy)]
                   (if (= resized node) node
-                      (-> node
-                          (update :layout/height + dy)
-                          (layout-update-height dy))))))))
+                      (update resized :layout/height + dy)))))))
 
 
 
