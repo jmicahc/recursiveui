@@ -83,6 +83,7 @@
 
 (defn- solve-equations
   [eqs dx]
+  #_(println "@solve: # terms" (count (first eqs)))
   (letfn [(remove-out-of-bounds [eq]
             (remove (partial out-of-bounds? (/ dx (count eq))) eq))
           (solve-equation [eq]
@@ -99,10 +100,17 @@
 
 (defn- equations->tree
   [eqs node]
+  #_(println "eqs" eqs)
+  #_(println "# terms:" (count (first eqs)))
   (let [depth (count (:path node))]
     (letfn [(eq->tree [[term & terms] node]
+              #_(println "path" (:path term))
               (if term
-                (recur terms (assoc-in node (subvec (:path term) depth) term))
+                (recur terms (update-in node
+                                        (subvec (:path term) depth)
+                                        assoc
+                                        :layout/magnitude
+                                        (:layout/magnitude term)))
                 node))
             (eqs->tree [[eq & eqs] node]
               (if eq (recur eqs (eq->tree eq node)) node))]
@@ -111,11 +119,15 @@
 
 
 
+
 (defn- layout-update-width
   [node dx]
+  #_(println "@layout-update-width")
+  #_(pprint node)
   (-> (width-equations node)
       (solve-equations dx)
       (equations->tree node)))
+
 
 
 
@@ -125,6 +137,7 @@
   (-> (height-equations node)
       (solve-equations  dy)
       (equations->tree  node)))
+
 
 
 
@@ -144,25 +157,17 @@
 
 
 
-(defn layout-resize-root
-  [state
-   {{:keys [layout/width
-            layout/height
-            layout/inner?
-            path] :as node} :node
-    :keys [delta/dx
-           delta/dy] :as msg}]
-  {:pre [(not (neg? width))
-         (not (neg? height))
-         (number? dx)
-         (number? dy)
-         (false? inner?)]}
-  (let [new-node (assoc node
-                        :layout/width (+ dx width)
-                        :layout/height (+ dy height))
-        new-layout (layout-update-size new-node dx dy)]
-    (if (empty? path) new-layout (assoc-in state path new-layout))))
 
+(defn layout-resize-root
+  ([{:keys [layout/width
+            layout/height]
+     :as root-node} new-width new-height]
+   (let [dx (- new-width width)
+         dy (- new-height height)]
+     (-> root-node
+         (layout-update-size dx dy)
+         (assoc :layout/width  new-width
+                :layout/height new-height)))))
 
 
 
@@ -324,19 +329,16 @@
 
 
 (defn layout-fullscreen
-  [state {:keys [node] :as msg}]
-  {:pre [(not (empty? (:path node)))]}
-  (let [path (:path node)
-        win-width (.-innerWidth js/window)
-        win-height (.-innerHeight js/window)
-        dx (- win-width (:layout/width node))
-        dy (- win-height (:layout/height node))]
-    (layout-resize-root state
-                        {:node (assoc node
-                                      :layout/left 0
-                                      :layout/top 0)
-                         :delta/dx dx
-                         :delta/dy dy})))
+  [{:keys [layout/width
+           layout/height]
+    :as root-node}]
+  (let [win-width (.-innerWidth js/window)
+        win-height (.-innerHeight js/window)]
+    (-> root-node
+        (assoc :layout/left 0
+                 :layout/top 0)
+        (layout-resize-root win-width win-height))))
+
 
 
 
@@ -356,8 +358,39 @@
 
 
 
+
+(defn delete-node!
+  [{:keys [path] :as node}]
+  (swap! data/state
+         update-in
+         (-> path pop pop)
+         (fn [parent]
+           (let [idx      (peek path)
+                 children (:children parent)
+                 before   (subvec children 0 idx)
+                 after    (subvec children (inc idx))]
+             (assoc parent
+                    :children
+                    (into before after))))))
+
+
+
+
+
 (defn update!
   ([{:keys [command] :as msg}]
    (update! command msg))
-  ([f msg]
-   (swap! data/state f msg)))
+  ([f & args]
+   (apply swap! data/state f args)))
+
+
+
+
+(defn update-node!
+  [node f & args]
+  (let [ret  (apply f node args)
+        path (:path node)]
+    (if (empty? path)
+      (reset! data/state ret)
+      (swap! data/state assoc-in path ret))
+    ret))

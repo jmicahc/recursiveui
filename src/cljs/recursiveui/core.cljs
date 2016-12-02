@@ -39,19 +39,19 @@
 
 
 
-
 (defn window-listener [e]
   (let [{:keys [layout/width
                 layout/height]
          :as root} @data/state]
-    (command/update! command/layout-resize-root 
-                     {:node root
-                      :delta/dx (- (window-width) width)
-                      :delta/dy (- (window-height) height)})))
+    (command/update-node! root
+                          command/layout-resize-root
+                          (window-width)
+                          (window-height))))
 
 
 (gevents/unlisten js/window "resize" window-listener)
 (gevents/listen js/window "resize" window-listener)
+
 
 (defn ^:export main []
   (dev-setup)

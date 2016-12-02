@@ -31,10 +31,11 @@
 
 
 
+
 (defn render
   [{:keys [tags test]
     :as node}]
   (let [f (transduce (map tag->fn) comp tags)
-        x (f node)]
+        x (f (assoc node :node node))]
     (into (create-element x)
           (render-nav (map render) x))))

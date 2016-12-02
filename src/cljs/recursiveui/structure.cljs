@@ -9,8 +9,8 @@
 
 (defn flex-row
   [{:keys [layout/magnitude]
-    :as node}]
-  (style node
+    :as x}]
+  (style x
          :height magnitude
          :display "flex"
          :position "relative"
@@ -22,8 +22,8 @@
 
 (defn flex-column
   [{:keys [layout/magnitude]
-    :as node}]
-  (style node
+    :as x}]
+  (style x
          :width magnitude
          :display "flex"
          :position "relative"
@@ -40,8 +40,8 @@
            layout/width
            layout/height
            layout/flex-direction]
-    :as node}]
-  (style node
+    :as x}]
+  (style x
          :position "absolute"
          :flexDirection flex-direction
          :width width
@@ -56,8 +56,8 @@
 
 (defn sidebar-left
   "temporary"
-  [node]
-  (style node
+  [x]
+  (style x
          :backgroundColor "brown"
          :position "absolute"
          :top 0
@@ -73,8 +73,8 @@
 
 (defn sidebar-top
   "temporary"
-  [node]
-  (style node
+  [x]
+  (style x
          :backgroundColor "brown"
          :position "absolute"
          :left "0px"
@@ -91,8 +91,8 @@
 
 (defn sidebar-right
   "temporary"
-  [node]
-  (style node
+  [x]
+  (style x
          :backgroundColor "brown"
          :position "absolute"
          :top "0px"
@@ -107,8 +107,8 @@
 
 (defn sidebar-bottom
   "temporary"
-  [node]
-  (style node
+  [x]
+  (style x
          :backgroundColor "brown"
          :position "absolute"
          :bottom "0px"
@@ -116,3 +116,33 @@
          :height "8px"
          :opacity "1"))
 
+
+
+
+
+(defn flex-root-action-bar
+  "temporary"
+  [x]
+  (style x
+         :width "100%"
+         :height 40
+         :top 3
+         :left -3
+         :position "absolute"
+         :backgroundColor "grey"
+         :borderColor "#181319"
+         :border "solid"))
+
+
+
+
+(defn action-button
+  "temporary"
+  [x]
+  (style x
+         :width 20
+         :height 20
+         :left 10
+         :top 10
+         :backgroundColor "red"
+         :position "relative"))
