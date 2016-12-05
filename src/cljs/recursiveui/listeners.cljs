@@ -3,281 +3,204 @@
   (:require [cljs.core.async :refer [chan put! <!]]
             [recursiveui.data :as data]
             [recursiveui.command :as command :refer [update! update-node!]]
-            [recursiveui.element :as elem :refer [attr style class tag]]
+            [recursiveui.element :as elem :refer [attr style class tag event]]
             [goog.events :as gevents :refer [listen unlisten]]
             [cljs.pprint :refer [pprint]]))
 
 
-(def channel (chan 10))
 (declare perform-drag)
 
 
-(defn layout-resize-source [x]
-  (attr x
-        :onMouseDown
-        (fn [e]
-          (.persist e)
-          (aset e "eventname" :layout/resize)
-          e)))
+(defn save-actions [x]
+  (event x
+         :delete
+         (mapcat (fn [msg] [{:event-name :save-state} msg]))
+         :duplicate
+         (mapcat (fn [msg] [{:event-name :save-state} msg]))))
+
+
+(defn resize-source [x]
+  (event x :onMouseDown
+         (fn [msg] (assoc msg :event-name :resize))))
 
 
 
+(defn duplicate-source [x]
+  (event x :onMouseDown
+         (map (fn [msg] (assoc msg :event-name :duplicate)))))
 
-(defn layout-resize-handler
-  [{:keys [layout/partition
-           node]
+
+
+(defn duplicate-handler [x]
+  (event x :duplicate
+         (map (fn [msg] (assoc msg :child (:node x))))))
+
+
+
+(defn duplicate-sink [x]
+  (event x :duplicate
+         (map (fn [msg]
+                (assoc msg :parent (:node x))))))
+
+
+
+(defn layout-resize-target [x]
+  (event x :resize
+         (mapcat (fn [msg]
+                   [msg (assoc msg
+                               :name  :layout-resize-sink
+                               :child (:node x))]))))
+
+(defn layout-resize-sink
+  [{:keys [node]
     :as x}]
-  (attr x
-        :onMouseDown
-        (fn [e]
-          (when (= (.-eventname e) :layout/resize)
-            (put! channel
-                  {:node node
-                   :event e
-                   :name :drag
-                   :command (if (= partition :row)
-                              command/layout-resize-height
-                              command/layout-resize-width)}))
-          e)))
-
-
+  (event x
+         :layout-resize-sink
+         (map (fn [msg]
+                (assoc msg :parent node)))))
 
 
 
 (defn layout-resize-root-handler
   [{:keys [node]
     :as x}]
-  (attr x
-        :onMouseDown
-        (fn [e]
-          (.persist e)
-          (when-let [f (case (.-eventname e)
-                         :layout/resize-left   command/resize-root-left
-                         :layout/resize-top    command/resize-root-top
-                         :layout/resize-bottom command/resize-root-bottom
-                         :layout/resize-right  command/resize-root-right
-                         nil)]
-            (put! channel
-                  {:node node
-                   :event e
-                   :name :drag
-                   :command f}))
-          e)))
+  (event x
+         :layout-resize-root
+         (map (fn [msg] (assoc msg :node node)))))
+
 
 
 
 (defn layout-resize-left-source [x]
-  (attr x
-        :onMouseDown
-        (fn [e]
-          (aset e "eventname" :layout/resize-left)
-          e)))
-
+  (event x :onMouseDown
+         (map (fn [msg]
+                (assoc msg
+                       :event-name  :layout-resize-root
+                       :resize-side :left)))))
 
 
 
 (defn layout-resize-right-source [x]
-  (attr x
-        :onMouseDown
-        (fn [e]
-          (aset e "eventname" :layout/resize-right)
-          e)))
-
+  (event x :onMouseDown
+         (map (fn [msg]
+                (assoc msg
+                       :event-name :layout-resize-root
+                       :resize-side :right)))))
 
 
 
 (defn layout-resize-top-source [x]
-  (attr x
-        :onMouseDown
-        (fn [e]
-          (aset e "eventname" :layout/resize-top)
-          e)))
-
+  (event x :onMouseDown
+         (map (fn [msg]
+                (assoc msg
+                       :event-name   :layout-resize-root
+                       :resize-side  :top)))))
 
 
 
 (defn layout-resize-bottom-source [x]
-  (attr x
-        :onMouseDown
-        (fn [e]
-          (aset e "eventname" :layout/resize-bottom)
-          e)))
-
+  (event x :onMouseDown
+         (map (fn [msg]
+                (assoc msg
+                       :event-name :layout-resize-root
+                       :layout-resize-root
+                       :resize-side :bottom)))))
 
 
 
 (defn conjoin-action-source [x]
-  (attr x
-        :onClick
-        (fn [e]
-          (aset e "eventname" :conjoin)
-          e)))
+  (event x :onClick
+         (map (fn [msg]
+                 (assoc msg
+                        :event-name :conjoin)))))
 
 
 
-(defn fullsize-action-source [x]
-  (attr x
-        :onClick
-        (fn [e]
-          (aset e "eventname" :fullsize)
-          e)))
+(defn conjoin-action-handler
+  [{:keys [node] :as x}]
+  (event x :conjoin
+         (map (fn [msg]
+                (assoc msg :child node)))))
 
 
 
-(defn layout-fullsize-action-handler
+(defn conjoin-action-sink
+  [{:keys [node] :as x}]
+  (event x :conjoin
+         (map (fn [msg]
+                (assoc msg :node node)))))
+
+
+
+
+(defn fullsize-source [x]
+  (event x :onClick
+         (map (fn [msg]
+                (assoc msg :event-name :fullsize)))))
+
+
+
+(defn fullsize-handler
   ([{:keys [fullscreen?
-            previous-width   layout/width
-            previous-height  layout/height
-            previous-top     layout/top
-            previous-left    layout/left
             node]
      :as x}]
-   (attr x
-         :onClick
-         (fn [e]
-           (when (= (.-eventname e) :fullsize)
-             (if fullscreen?
-               (-> (update-node! node
-                                 command/layout-resize-root
-                                 previous-width
-                                 previous-height)
-
-                   (update-node! assoc
-                                 :layout/width    previous-width
-                                 :layout/height   previous-height
-                                 :layout/top      previous-top
-                                 :layout/left     previous-left
-                                 :fullscreen?     false))
-               
-               (-> (assoc node
-                          :previous-width  width
-                          :previous-height height
-                          :previous-top    top
-                          :previous-left   left
-                          :fullscreen?     true)
-                   
-                   (update-node! command/layout-fullscreen))))
-           e))))
+   (event x :fullsize
+          (map (fn [msg]
+                 (assoc msg
+                        :node node
+                        :minimize? (if fullscreen? true false)))))))
 
 
 
-
-
-(defn delete-action-source
+(defn delete-source
   [{:keys [node]
     :as x}]
-  (attr x
-        :onClick
-        (fn [e]
-          (println "event-name" (aget e "eventname")
-                   (aget e "layout-delete-node"))
-          (aset e "eventname" :delete)
-          (aset e "node" node)
-          e)))
+  (event x :onClick
+         (map (fn [msg]
+                (println "@delete-source")
+                (assoc msg :event-name :delete)))))
 
 
 
-(defn delete-action-handler
+(defn delete-handler
   [{:keys [node]
     :as x}]
-  (attr x
-        :onClick
-        (fn [e]
-          (when (= (.-eventname e) :delete)
-            (aset e "deletenode" node)
-            (aset e "deleteparent" (command/delete-node! node)))
-          e)))
+  (event x :delete
+        (map (fn [msg]
+               (println "@delete-handler")
+               (assoc msg :child node)))))
+
+
+(defn delete-sink
+  [{:keys [node] :as x}]
+  (event x :delete
+        (map (fn [msg]
+               (println "@delete-sink")
+               (assoc msg :parent node)))))
 
 
 
-
-(defn layout-delete-handler
+(defn layout-delete
   [{:keys [node layout/partition]
     :as x}]
-  (attr x
-        :onClick
-        (fn [e]
-          (cond (aget e "layout-delete-node")
-                (let [deleted (.-deletenode e)
-                      parent  (.-deleteparent e)]
-                  (aset e "layout-delete-node" false)
-                  (update-node! parent
-                                (if (= partition :row)
-                                  command/layout-update-width
-                                  command/layout-update-height)
-                                (:layout/magnitude deleted)))
-
-                (= (.-eventname e) :delete)
-                (aset e "layout-delete-node" true))
-          e)))
+  (event x :delete
+         (mapcat (fn [msg]
+                   [msg (assoc msg :event-name :layout-delete)]))))
 
 
 
-
-
-
-(defn layout-drag-handler
+(defn layout-drag
   [{:keys [node
            fullscreen?]
     :as x}]
-  (attr x
-        :onMouseDown
-        (fn [e]
-          (when (and (= (.-eventname e) :layout-drag)
-                     (not fullscreen?))
-            (perform-drag {:node     node
-                           :event    e
-                           :client-x (.-clientX e)
-                           :client-y (.-clientY e)
-                           :command  command/layout-drag}))
-          e)))
- 
+  (event x :drag
+         (mapcat (fn [msg]
+                   [msg (assoc msg :event-name :layout-drag)]))))
 
 
 
-(defn layout-drag-source [x]
-  (attr x
-        :onMouseDown
-        (fn [e]
-          (aset e "eventname" :layout-drag))))
-
-
-
-
-
-(defn perform-drag
-  [{:keys [event client-x client-y] :as msg}]
-  (let [prev (atom [(or client-x (.-clientX event))
-                    (or client-y (.-clientY event))])]
-    (letfn [(drag-listener [e]
-              (let [x (.-clientX e)
-                    y (.-clientY e)
-                    value @prev
-                    dx (- x (value 0))
-                    dy (- y (value 1))]
-                (command/update! (assoc msg
-                                        :delta/dx dx
-                                        :delta/dy dy))
-                (reset! prev [x y])))
-            (unlisten-f [e]
-              (unlisten js/window
-                        "mousemove"
-                        drag-listener))]
-      (listen js/window "mouseup" unlisten-f)
-      (listen js/window "mousemove" drag-listener))))
-
-
-
-(defn init-chan []
-  (go-loop []
-    (let [{:keys [name] :as msg} (<! channel)]
-      (case name
-        :drag (perform-drag msg)
-        (command/update! msg))
-      (recur))))
-
-
-
-
-
-(init-chan)
+(defn undo-source [x]
+  (event x :onClick
+         (map (fn [msg]
+                (println "@undo-source")
+                (assoc msg :event-name :undo)))))

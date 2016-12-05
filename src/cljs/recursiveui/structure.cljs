@@ -146,3 +146,16 @@
          :top 10
          :backgroundColor "red"
          :position "relative"))
+
+
+
+(defn button
+  "temporary"
+  [x]
+  (style x
+         :width 20
+         :height 20
+         :right 10
+         :bottom 10
+         :backgroundColor "brown"
+         :position "absolute"))

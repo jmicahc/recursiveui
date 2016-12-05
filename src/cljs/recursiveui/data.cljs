@@ -3,11 +3,11 @@
 
 
 (def state
-  (reagent/atom
-   {:tags #{:structure/flex-root}
+  (atom
+   {:tags #{:structure/flex-root
+            :component/root-drag-handler
+            #_:listeners/undo-action-handler}
     :element/style {:backgroundColor "red"}
-    :element/attr {:onClick
-                   (fn [e] (aset e "eventname" nil))}
     :element/type :div
     :component/id 1
     :traverse/render? true
@@ -20,7 +20,12 @@
     :layout/top 0
     :layout/left 0
     :children [{:tags #{:structure/flex-row
-                        :listeners/layout-delete-handler}
+                        :layout/layout-handler
+                        :listeners/delete-sink
+                        :listeners/duplicate-sink
+                        #_:listeners/layout-delete-handler
+                        #_:listeners/layout-resize
+                        #_:listeners/duplicate-action}
                 :component/id 2
                 :element/style {:backgroundColor "green"}
                 :traverse/render? true
@@ -32,8 +37,8 @@
                 :layout/variable? true
                 :layout/inner? true
                 :children [{:tags #{:structure/flex-column
-                                    :listeners/layout-delete-handler
-                                    :listeners/delete-action-handler}
+                                    #_:listeners/layout-delete-handler
+                                    #_:listeners/delete-action-handler}
                             :element/type :div
                             :element/style {:backgroundColor "blue"}
                             :component/id 3
@@ -45,16 +50,17 @@
                             :layout/magnitude 200
                             :layout/min-magnitude 50
                             :style/backgroundColor "blue"
-                            :children [{:tags #{:listeners/delete-action-source
+                            :children [{:tags #{#_:listeners/delete-action-source
                                                 :structure/action-button}
                                         :traverse/render? true}]}
                            {:tags #{:structure/flex-column
-                                    :listeners/layout-resize-handler
-                                    :listeners/layout-delete-handler
-                                    :listeners/delete-action-handler}
+                                    :layout/layout-handler
+                                    :listeners/save-actions
+                                    :listeners/delete-handler
+                                    :listeners/duplicate-handler}
                             :component/id 4
                             :traverse/render? true
-                            :element/style {:backgroundColor "grey"}
+                            :element/style {:backgroundColor "purple"}
                             :layout/partition :column
                             :layout/magnitude 100
                             :layout/min-magnitude 20
@@ -62,16 +68,20 @@
                             :layout/variable? true
                             :layout/inner? true
                             :style/backgroundColor "grey"
-                            :children [{:tags #{:listeners/delete-action-source
-                                                :structure/action-button}
+                            :children [{:tags #{:structure/button
+                                                :listeners/delete-source
+                                                #_:listeners/duplicate-action}
+                                        :traverse/render? true}
+                                       {:tags #{:structure/action-button
+                                                :listeners/duplicate-source}
                                         :traverse/render? true}
                                        {:tags #{:structure/sidebar-left
-                                                :listeners/layout-resize-source}
+                                                #_:listeners/layout-resize}
                                         :traverse/render? true}]}
                            {:tags #{:structure/flex-column
-                                    :listeners/layout-resize-handler
-                                    :listeners/layout-delete-handler
-                                    :listeners/delete-action-handler}
+                                    #_:listeners/layout-resize
+                                    #_:listeners/layout-delete-handler
+                                    #_:listeners/delete-action-handler}
                             :component/id 5
                             :traverse/render? true
                             :element/style {:backgroundColor "grey"}
@@ -82,15 +92,15 @@
                             :layout/variable? true
                             :layout/inner? true
                             :children [{:tags #{:structure/action-button
-                                                :listeners/delete-action-source}
+                                                #_:listeners/delete-action-source}
                                         :traverse/render? true}
                                        {:tags #{:structure/sidebar-left
-                                                :listeners/layout-resize-source}
+                                                #_:listeners/layout-resize}
                                         :traverse/render? true}]}
                            {:tags #{:structure/flex-column
-                                    :listeners/layout-resize-handler
-                                    :listeners/layout-delete-handler
-                                    :listeners/delete-action-handler}
+                                    #_:listeners/layout-resize
+                                    #_:listeners/layout-delete-handler
+                                    #_:listeners/delete-action-handler}
                             :component/id 5
                             :element/style {:backgroundColor "grey"}
                             :traverse/render? true
@@ -101,14 +111,13 @@
                             :layout/variable? true
                             :layout/inner? true
                             :children [{:tags #{:structure/action-button
-                                                :listeners/delete-action-source}
+                                                #_:listeners/delete-action-source}
                                         :traverse/render? true}
                                        {:tags #{:structure/sidebar-left
-                                                :listeners/layout-resize-source}
-                                        :messages {:onMouseDown :layout/resize}
+                                                #_:listeners/layout-resize}
                                         :traverse/render? true}]}]}
                {:tags #{:structure/flex-row
-                        :listeners/layout-resize-handler}
+                        #_:listeners/layout-resize-handler}
                 :layout/partition :row
                 :component/id 6
                 :element/style {:backgroundColor "orange"}
@@ -118,8 +127,11 @@
                 :layout/magnitude 600
                 :layout/min-magnitude 60
                 :layout/variable? true
-                :children [{:tags #{:structure/sidebar-top
-                                    :listeners/layout-resize-source}
+                :children [{:tags #{:structure/action-button
+                                    :listeners/undo-source}
+                            :traverse/render? true}
+                           {:tags #{:structure/sidebar-top
+                                    #_:listeners/layout-resize-source}
                             :events #{:layout/resize}
                             :traverse/render? true}]}
                {:tags #{:component/resizable-flex-root
@@ -136,7 +148,9 @@
                 :layout/height 700
                 :layout/top 100
                 :layout/left 100
-                :children [{:tags #{:structure/flex-row}
+                :children [#_{:tags #{:structure/flex-row
+                                    :listeners/duplicate-action
+                                    :listeners/test-action}
                             :component/id 8
                             :element/style {:backgroundColor "green"}
                             :traverse/render? true
@@ -146,7 +160,9 @@
                             :layout/active? true
                             :layout/variable? true
                             :layout/inner? true
-                            :children [{:tags #{:structure/flex-column}
+                            :children [{:tags #{:structure/flex-column
+                                                :listeners/duplicate-action
+                                                :listeners/test-action}
                                         :element/style {:backgroundColor "blue"}
                                         :component/id 9
                                         :traverse/render? true
@@ -155,10 +171,16 @@
                                         :layout/variable? true
                                         :layout/inner? true
                                         :layout/magnitude 200
-                                        :layout/max-magnitude 300
-                                        :layout/min-magnitude 50}
+                                        :layout/max-magnitude 800
+                                        :layout/min-magnitude 50
+                                        :children [{:tags #{:structure/button
+                                                            :listeners/duplicate-action
+                                                            :listeners/test-action}
+                                                    :component/id 20
+                                                    :traverse/render? true}]}
                                        {:tags #{:structure/flex-column
-                                                :listeners/layout-resize-handler}
+                                                :listeners/layout-resize-handler
+                                                :listeners/duplicate-action}
                                         :element/style {:backgroundColor "grey"}
                                         :component/id 10
                                         :traverse/render? true
@@ -170,6 +192,9 @@
                                         :layout/inner? true
                                         :children [{:tags #{:listeners/layout-resize-source
                                                             :structure/sidebar-left}
+                                                    :traverse/render? true}
+                                                   {:tags #{:listeners/duplicate-action
+                                                            :structure/button}
                                                     :traverse/render? true}]}
                                        {:tags #{:structure/flex-column
                                                 :listeners/layout-resize-handler}
@@ -185,7 +210,7 @@
                                         :children [{:tags #{:structure/sidebar-left
                                                             :listeners/layout-resize-source}
                                                     :traverse/render? true}]}]}
-                           {:tags #{:structure/flex-row
+                           #_{:tags #{:structure/flex-row
                                     :listeners/layout-resize-handler}
                             :component/id 12
                             :element/style {:backgroundColor "green"}
@@ -199,3 +224,11 @@
                             :children [{:tags #{:structure/sidebar-top
                                                 :listeners/layout-resize-source}
                                         :traverse/render? true}]}]}]}))
+
+
+
+
+
+(def memory
+  (atom {:root-timeline []}))
+

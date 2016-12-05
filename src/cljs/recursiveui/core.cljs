@@ -1,4 +1,5 @@
 (ns recursiveui.core
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [reagent.core :as reagent]
             [recursiveui.data :as data]
             [recursiveui.command :as command
@@ -6,7 +7,8 @@
             [recursiveui.traverse :refer [render]]
             [goog.dom :as gdom]
             [goog.events :as gevents]
-            [clojure.pprint :refer [pprint]]))
+            [clojure.pprint :refer [pprint]]
+            [cljs.core.async :as async :refer [chan <!]]))
 
 
 (defonce debug?
@@ -19,26 +21,22 @@
     (println "dev mode")))
 
 
-
-(defn root-component [state]
-  (fn [] [:div {:id "root-elem"} (render @state)]))
-
+(def root-channel (chan))
+(def root-element (.getElementById js/document "app"))
 
 
 
-
-(defn reload []
-  (reagent/render [root-component data/state]
-                  (.getElementById js/document "app")))
-
+(defn event-loop []
+  (go-loop []
+    (let [msg (<! root-channel)]
+      (reagent/render (render root-channel (command/dispatch msg))
+                      root-element)
+      (recur))))
 
 
 
 (defn window-width [] (.-innerWidth js/window))
 (defn window-height [] (.-innerHeight js/window))
-
-
-
 (defn window-listener [e]
   (let [{:keys [layout/width
                 layout/height]
@@ -56,4 +54,10 @@
 (defn ^:export main []
   (dev-setup)
   (window-listener nil)
-  (reload))
+  (event-loop)
+  (reagent/render (render root-channel @data/state)
+                  root-element))
+
+
+(reagent/render (render root-channel @data/state)
+                root-element)
