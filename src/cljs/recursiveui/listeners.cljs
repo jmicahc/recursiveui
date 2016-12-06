@@ -1,22 +1,14 @@
 (ns recursiveui.listeners
   (:require-macros [cljs.core.async.macros :refer [go-loop go]])
-  (:require [cljs.core.async :refer [chan put! <!]]
+  (:require [cljs.core.async :refer [chan put! <! pipe]]
             [recursiveui.data :as data]
-            [recursiveui.command :as command :refer [update! update-node!]]
+            [recursiveui.command :as command]
             [recursiveui.element :as elem :refer [attr style class tag event]]
             [goog.events :as gevents :refer [listen unlisten]]
             [cljs.pprint :refer [pprint]]))
 
 
 (declare perform-drag)
-
-
-(defn save-actions [x]
-  (event x
-         :delete
-         (mapcat (fn [msg] [{:event-name :save-state} msg]))
-         :duplicate
-         (mapcat (fn [msg] [{:event-name :save-state} msg]))))
 
 
 (defn resize-source [x]
@@ -32,7 +24,8 @@
 
 
 (defn duplicate-handler [x]
-  (event x :duplicate
+  (event x
+         :duplicate
          (map (fn [msg] (assoc msg :child (:node x))))))
 
 
@@ -40,7 +33,7 @@
 (defn duplicate-sink [x]
   (event x :duplicate
          (map (fn [msg]
-                (assoc msg :parent (:node x))))))
+                (assoc msg :parent-path (:path x))))))
 
 
 
@@ -157,7 +150,6 @@
     :as x}]
   (event x :onClick
          (map (fn [msg]
-                (println "@delete-source")
                 (assoc msg :event-name :delete)))))
 
 
@@ -167,16 +159,13 @@
     :as x}]
   (event x :delete
         (map (fn [msg]
-               (println "@delete-handler")
                (assoc msg :child node)))))
 
 
 (defn delete-sink
   [{:keys [node] :as x}]
   (event x :delete
-        (map (fn [msg]
-               (println "@delete-sink")
-               (assoc msg :parent node)))))
+        (map (fn [msg] (assoc msg :parent-path (:path x))))))
 
 
 
@@ -202,5 +191,4 @@
 (defn undo-source [x]
   (event x :onClick
          (map (fn [msg]
-                (println "@undo-source")
                 (assoc msg :event-name :undo)))))

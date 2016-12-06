@@ -27,13 +27,16 @@
    :listeners/duplicate-source            listeners/duplicate-source
    :listeners/duplicate-handler           listeners/duplicate-handler
    :listeners/duplicate-sink              listeners/duplicate-sink
-   :listeners/save-actions                listeners/save-actions
    :listeners/undo-source                 listeners/undo-source
    :sources/layout-resize-top             sources/layout-resize-top
    :sources/layout-resize-bottom          sources/layout-resize-bottom
    :sources/layout-resize-left            sources/layout-resize-left
    :sources/layout-resize-right           sources/layout-resize-right
-   :component/resizable-flex-root         component/resizable-flex-root
+   :sources/resize                        sources/resize
+   :layout/resizable-flex-root            layout/resizable-flex-root
+   :layout/resizable-flex-row             layout/resizable-flex-row
+   :layout/resizable-flex-column          layout/resizable-flex-column
+   :layout/column-leaf-decorator          layout/column-leaf-decorator
    :component/root-drag-handler           component/root-drag-handler
 
    

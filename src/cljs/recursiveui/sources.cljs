@@ -2,6 +2,7 @@
   (:require [recursiveui.element :as element]))
 
 
+
 (defn layout-resize-left [x]
   (element/event-source x :onMouseDown :layout-resize-left))
 
@@ -19,3 +20,7 @@
 
 (defn layout-resize-bottom [x]
   (element/event-source x :onMouseDown :layout-resize-bottom))
+
+
+(defn resize [x]
+  (element/event-source x :onMouseDown :resize))

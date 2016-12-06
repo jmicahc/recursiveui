@@ -120,7 +120,6 @@
 
 
 
-
 (defn- layout-update-width
   [node dx]
   (-> (width-equations node)
@@ -156,7 +155,6 @@
 
 
 
-
 (defn layout-resize-root
   ([{:keys [layout/width
             layout/height]
@@ -171,59 +169,7 @@
 
 
 
-(defn layout-resize-height
-  ([state {:keys [node delta/dy child parent]}]
-   (layout-resize-height state parent node dy))
-  ([state parent node dy]
-   {:pre [(not (nil? dy))
-          (has-parent? node)]}
-   (let [parent-path (-> (:path node) pop pop)
-         parent (or parent (get-in state parent-path))
-         index (peek (:path node))
-         left-subtree (subtree parent 0 index)
-         right-subtree (subtree parent index)
-         resized-left (layout-update-height left-subtree dy)
-         resized-right (layout-update-height right-subtree (- dy))
-         new-children (into (:children resized-left) (:children resized-right))]
-     (if (or (= resized-left left-subtree)
-             (= resized-right right-subtree))
-       state
-       (if (empty? parent-path)
-         (assoc state :children new-children)
-         (update-in state parent-path assoc :children new-children))))))
-
-
-
-
-
-(defn layout-resize-width
-  ([] (println "what?"))
-  ([state {:keys [node parent delta/dx]}]
-   state
-   #_(layout-resize-width state parent node dx))
-  ([state parent node dx]
-   {:pre [(not (nil? dx))
-          (has-parent? node)]}
-   (println (= (:path parent) (-> (:path node) pop pop)))
-   (let [parent-path (-> (:path node) pop pop)
-         parent  parent #_(get-in state parent-path)
-         index (peek (:path node))
-         left-subtree (subtree parent 0 index)
-         right-subtree (subtree parent index)
-         resized-left (layout-update-width left-subtree dx)
-         resized-right (layout-update-width right-subtree (- dx))
-         new-children (into (:children resized-left) (:children resized-right))]
-     (if (or (= resized-left left-subtree)
-             (= resized-right right-subtree))
-       state
-       (if (empty? parent-path)
-         (assoc state :children new-children)
-         (update-in state parent-path assoc :children new-children))))))
-
-
-
-
-(defn layout-resize
+#_(defn layout-resize
   ([state {:keys [node delta/dx delta/dy] :as m}]
    (layout-resize state node dx dy))
   ([state node dx dy]
@@ -282,91 +228,6 @@
 
 
 
-
-
-(defn layout-fullscreen
-  [{:keys [layout/width
-           layout/height]
-    :as root-node}]
-  (let [win-width (.-innerWidth js/window)
-        win-height (.-innerHeight js/window)]
-    (-> root-node
-        (assoc :layout/left 0
-                 :layout/top 0)
-        (layout-resize-root win-width win-height))))
-
-
-
-
-
-
-(defn layout-conjoin
-  ([state {:keys [node] :as msg}]
-   (layout-conjoin state node (last (:children node))))
-  ([state node last-node]
-   (let [dx (:layout/magnitude last-node)]
-     (update-in state
-                (:path node)
-                (fn [node]
-                  (-> node
-                      (update :children conj last-node)
-                      (layout-update-width (- dx))))))))
-
-
-
-(defn duplicate!
-  [parent child]
-  (swap! data/state
-         update-in
-         (:path parent)
-         (fn [parent*]
-           (let [idx (-> child :path peek)
-                 mag (:layout/magnitude child)]
-             (-> (update parent*
-                         :children
-                         (fn [children]
-                           (let [idx (-> child :path peek)]
-                             (into (conj (subvec children 0 idx) child)
-                                   (subvec children idx)))))
-                 (layout-update-width (- mag)))))))
-
-
-
-
-(defn update!
-  ([{:keys [command] :as msg}]
-   (update! command msg))
-  ([f msg]
-   (swap! data/state f msg)))
-
-
-
-
-
-(defn update-node!
-  [node f & args]
-  (let [ret  (apply f node args)
-        path (:path node)]
-    (if (empty? path)
-      (reset! data/state ret)
-      (swap! data/state assoc-in path ret))
-    ret))
-
-
-
-
-(defn previous-state! []
-  (when-let [prev-state (last (:root-timeline @data/memory))]
-    (reset! data/state prev-state)
-    (swap! data/memory update :root-timeline pop)))
-
-
-
-(defn save-state! []
-  (swap! data/memory update :root-timeline conj @data/state))
-
-
-
 (defmethod dispatch :default
   [msg]
   @data/state)
@@ -375,14 +236,15 @@
 
 
 (defmethod dispatch :delete
-  [{:keys [parent child] :as msg}]
+  [{:keys [parent-path child] :as msg}]
+  {:pre [(not (empty? parent-path)) child]}
   (swap! data/state
          update-in
-         (:path parent)
-         (fn [parent*]
+         parent-path
+         (fn [parent]
            (let [idx (peek (:path child))
-                 children (:children parent*)]
-             (assoc parent*
+                 children (:children parent)]
+             (assoc parent
                     :children
                     (into (subvec children 0 idx)
                           (subvec children (inc idx))))))))
@@ -391,43 +253,33 @@
 
 
 
-(defmethod dispatch :layout-delete-sink
-  [{:keys [parent child] :as msg}]
-  {:pre [parent child (:layout/magnitude child)]}
-  (swap! data/state
-         update-in
-         (:path parent)
-         layout-update-width
-         (:layout/magnitude child)))
-
-
-
-
-
-
-(defmethod dispatch :layout-duplicate-sink
-  [{:keys [parent child] :as msg}]
-  (swap! data/state
-         update-in
-         (:path parent)
-         layout-update-width
-         (- (:layout/magnitude child))))
-
-
-
-
-
 (defmethod dispatch :duplicate
-  [{:keys [parent child] :as msg}]
+  [{:keys [parent-path child] :as msg}]
+  {:pre [parent-path child]}
   (swap! data/state
          update-in
-         (:path parent)
+         parent-path
          (fn [{:keys [children] :as p}]
            (let [idx (peek (:path child))]
              (assoc p
                     :children
                     (into (conj (subvec children 0 idx) child)
                           (subvec children idx)))))))
+
+
+
+
+
+(defmethod dispatch :drag
+  [{:keys [node-path delta-x delta-y] :as msg}]
+  (swap! data/state
+         update-in
+         node-path
+         (fn [node]
+           (assoc node
+                  :layout/top (+ top dy)
+                  :layout/left (+ left dx)))))
+
 
 
 
@@ -443,9 +295,7 @@
 
 
 
-
 (defmethod dispatch :save-state
   [msg]
-  (println "saving state!")
   (swap! data/memory update :root-timeline conj @data/state)
   @data/state)

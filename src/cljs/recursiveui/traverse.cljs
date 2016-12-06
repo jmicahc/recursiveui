@@ -35,7 +35,9 @@
 
 (defn render
   ([ch {:keys [tags] :as node}]
-   (let [f (transduce (map tag->fn) comp tags)
+   (let [f (transduce (comp
+                       #_(map (fn [tag] (println "tag" tag) tag))
+                       (map tag->fn)) comp tags)
          x (f (assoc node
                      :node node
                      :channel ch))]

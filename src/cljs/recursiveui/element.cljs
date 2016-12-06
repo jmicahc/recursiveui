@@ -51,23 +51,71 @@
                   :onMouseUp :onMouseDown :onMouseMove})
 
 
+
+
+#_(def pipe-fn
+  (memoize (fn [ch handlers]
+             (let [xform (fn [rf]
+                           (let [rfs (into {}
+                                           (map (fn [[k xf]] [k (xf rf)]))
+                                           handlers)]
+                             (fn
+                               ([] (rf))
+                               ([buff] (rf buff))
+                               ([buff {:keys [event-name] :as x}]
+                                ((rfs event-name rf) buff x)))))
+                   transform (chan 100 xform)]
+               (println "@pipe-fn")
+               (pipe transform ch)
+               transform))))
+
+
+#_(defn event
+  [{:keys [node]
+    :as x} k xf & kxfs]
+  (let [dom-events (filter dom-events (cons k (take-nth 2 kxfs)))
+        handlers (apply assoc {} k xf kxfs)
+        x* (update x :channel pipe-fn handlers)]
+    (test-handlers (:channel x*))
+    (apply attr
+           x*
+           (mapcat (fn [event-name]
+                     [event-name
+                      (fn [e]
+                        (.stopPropagation e)
+                        (.preventDefault e)
+                        (put! (:channel x*)
+                              {:client-x   (.-clientX e)
+                               :client-y   (.-cleintY e)
+                               :event-name event-name
+                               :source     (:node x)})
+                        e)])
+                   dom-events))))
+
+
+#_(def test-fn
+  (memoize (fn [arg]
+             (println "hello")
+             arg)))
+
 (defn event
   [{:keys [node]
     :as x} k xf & kxfs]
-  (let [handlers (apply assoc {} k xf kxfs)
+  (let [handlers   (apply assoc {} k xf kxfs)
         dom-events (filter dom-events (cons k (take-nth 2 kxfs)))
-        xform (fn [rf]
-                (let [rfs (into {}
-                                (map (fn [[k xf]] [k (xf rf)]))
-                                handlers)]
-                  (fn
-                    ([] (rf))
-                    ([buff] (rf buff))
-                    ([buff {:keys [event-name] :as x}]
-                     ((rfs event-name rf) buff x)))))
+        xform      (fn [rf]
+                     (let [rfs (into {}
+                                     (map (fn [[k xf]] [k (xf rf)]))
+                                     handlers)]
+                       (fn
+                         ([] (rf))
+                         ([buff] (rf buff))
+                         ([buff {:keys [event-name] :as x}]
+                          ((rfs event-name rf) buff x)))))
         transform (chan 100 xform)]
     (apply attr
            (update x :channel (fn [ch]
+                                  
                                 (pipe transform ch)
                                 transform))
            (mapcat (fn [event-name]
@@ -82,7 +130,6 @@
                                :source     (:node x)})
                         e)])
                    dom-events))))
-
 
 
 

@@ -2,8 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [reagent.core :as reagent]
             [recursiveui.data :as data]
-            [recursiveui.command :as command
-             :refer [layout-resize-height]]
+            [recursiveui.command :as command]
             [recursiveui.traverse :refer [render]]
             [goog.dom :as gdom]
             [goog.events :as gevents]
@@ -11,8 +10,10 @@
             [cljs.core.async :as async :refer [chan <!]]))
 
 
+
 (defonce debug?
   ^boolean js/goog.DEBUG)
+
 
 
 (defn dev-setup []
@@ -23,7 +24,6 @@
 
 (def root-channel (chan))
 (def root-element (.getElementById js/document "app"))
-
 
 
 (defn event-loop []
@@ -38,13 +38,14 @@
 (defn window-width [] (.-innerWidth js/window))
 (defn window-height [] (.-innerHeight js/window))
 (defn window-listener [e]
-  (let [{:keys [layout/width
-                layout/height]
-         :as root} @data/state]
-    (command/update-node! root
-                          command/layout-resize-root
-                          (window-width)
-                          (window-height))))
+  (swap! data/state
+         update-in
+         [:children 0]
+         (fn [node]
+           (command/layout-resize-root
+            node
+            (window-width)
+            (window-height)))))
 
 
 (gevents/unlisten js/window "resize" window-listener)
@@ -59,5 +60,5 @@
                   root-element))
 
 
-(reagent/render (render root-channel @data/state)
-                root-element)
+
+(main)
