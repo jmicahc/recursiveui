@@ -5,7 +5,8 @@
             [recursiveui.structure :as structure]
             [recursiveui.listeners :as listeners]
             [recursiveui.layout :as layout]
-            [recursiveui.sources :as sources]))
+            [recursiveui.sources :as sources]
+            [recursiveui.targets :as targets]))
 
 
 
@@ -33,6 +34,8 @@
    :sources/layout-resize-left            sources/layout-resize-left
    :sources/layout-resize-right           sources/layout-resize-right
    :sources/resize                        sources/resize
+   :sources/drag                          sources/drag
+   :targets/drag                          targets/drag
    :layout/resizable-flex-root            layout/resizable-flex-root
    :layout/resizable-flex-row             layout/resizable-flex-row
    :layout/resizable-flex-column          layout/resizable-flex-column

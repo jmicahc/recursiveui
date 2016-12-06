@@ -28,7 +28,6 @@
                    (mapcat (fn [{:keys [perform-drag? client-x client-y] :as msg}]
                              (if perform-drag?
                                (let [prev (atom [client-x client-y])
-                                     
                                      drag-fn (fn [e]
                                                (let [v @prev
                                                      x (.-clientX e)

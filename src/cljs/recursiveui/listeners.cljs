@@ -11,9 +11,6 @@
 (declare perform-drag)
 
 
-(defn resize-source [x]
-  (event x :onMouseDown
-         (fn [msg] (assoc msg :event-name :resize))))
 
 
 

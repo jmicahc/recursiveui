@@ -275,10 +275,12 @@
   (swap! data/state
          update-in
          node-path
-         (fn [node]
+         (fn [{:keys [layout/top
+                      layout/left]
+               :as node}]
            (assoc node
-                  :layout/top (+ top dy)
-                  :layout/left (+ left dx)))))
+                  :layout/top (+ top delta-y)
+                  :layout/left (+ left delta-x)))))
 
 
 

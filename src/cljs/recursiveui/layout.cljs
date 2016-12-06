@@ -2,6 +2,7 @@
   (:require [recursiveui.element :as elem :refer [event conjoin]]
             [recursiveui.command :as command :refer [dispatch layout-nav]]
             [recursiveui.structure :as structure]
+            [recursiveui.targets :as targets]
             [recursiveui.data :as data]
             [recursiveui.util :as util :refer [subtree]]))
 
@@ -158,7 +159,8 @@
         layout-root-handler
         (fn [x]
           (conjoin x
-                   {:tags #{:structure/flex-root-action-bar}
+                   {:tags #{:structure/flex-root-action-bar
+                            :sources/drag}
                     :traverse/render? true
                     :children [{:tags #{:structure/action-button}
                                 :traverse/render? true}]}

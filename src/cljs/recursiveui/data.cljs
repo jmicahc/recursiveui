@@ -143,6 +143,7 @@
                  {:tags #{:layout/resizable-flex-root
                           #_:layout/resizable-flex-column
                           :layout/column-leaf-decorator
+                          :targets/drag
                           :structure/flex-root-action-bar}
                   :component/id 7
                   :traverse/render? true

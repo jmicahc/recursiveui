@@ -24,3 +24,7 @@
 
 (defn resize [x]
   (element/event-source x :onMouseDown :resize))
+
+
+(defn drag [x]
+  (element/event-source x :onMouseDown :drag))
