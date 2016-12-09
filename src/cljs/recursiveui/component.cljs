@@ -1,10 +1,12 @@
 (ns recursiveui.component
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [recursiveui.listeners :as listeners]
             [recursiveui.structure :as structure]
+            [recursiveui.data :as data :refer [root-channel]]
             [recursiveui.command :as command]
             [recursiveui.layout :as layout]
             [recursiveui.element :as elem :refer [conjoin]]
-            [cljs.core.async :as async :refer [put! chan pipe]]
+            [cljs.core.async :as async :refer [put! chan pipe dropping-buffer timeout]]
             [goog.events :as gevents :refer [listen unlisten]]))
 
 
@@ -22,6 +24,18 @@
             x))))
 
 
+
+(def debounced
+  (let [ch (chan (dropping-buffer 1))]
+    (go-loop []
+      (let [x (<! ch)]
+        (timeout 15)
+        (>! root-channel x)
+        (recur)))
+    ch))
+
+
+
 (def root-drag-handler*
   (memoize (fn [channel]
              (let [xform
@@ -32,7 +46,7 @@
                                                (let [v @prev
                                                      x (.-clientX e)
                                                      y (.-clientY e)]
-                                                 (put! channel
+                                                 (put! debounced
                                                        (assoc msg
                                                               :delta-x (- x (v 0))
                                                               :delta-y (- y (v 1))))

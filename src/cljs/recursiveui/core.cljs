@@ -1,8 +1,8 @@
 (ns recursiveui.core
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [reagent.core :as reagent]
-            [recursiveui.data :as data]
-            [recursiveui.command :as command]
+            [recursiveui.data :as data :refer [root-channel]]
+            [recursiveui.command :as command :refer [dispatch]]
             [recursiveui.traverse :refer [render]]
             [goog.dom :as gdom]
             [goog.events :as gevents]
@@ -22,7 +22,6 @@
     (println "dev mode")))
 
 
-(def root-channel (chan))
 (def root-element (.getElementById js/document "app"))
 
 
@@ -32,6 +31,14 @@
       (reagent/render (render root-channel (command/dispatch msg))
                       root-element)
       (recur))))
+
+
+#_(do (dispatch {:event-name :save-state})
+    (reagent/render (render root-channel
+                            (dispatch {:node-path [:children 0 :children 2]
+                                       :event-name :layout-resize-left
+                                       :delta-x 30}))
+                    root-element))
 
 
 

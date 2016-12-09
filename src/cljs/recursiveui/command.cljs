@@ -44,6 +44,219 @@
 
 
 
+(defn max-by [f coll]
+  (reduce (fn [ret x]
+            (if (> (f x) ret) x ret))
+          coll))
+
+
+(defn min-by [f coll]
+  (reduce (fn [ret x]
+            (if (< (f x) ret) x ret))
+          coll))
+
+
+#_(defn- layout-height
+  [{:keys [layout/partition
+           layout/magnitude]
+    :as node}]
+  (when node
+    (if (= partition :row)
+      (if magnitude
+        {:magnitude magnitude
+         :max-magnitude (or (:layout/max-magnitude node) js/Infinity)
+         :min-magnitude (or (:layout/min-magnitude node) 0)
+         :remainder (- magnitude (or (:layout/min-magnitude node) 0))}
+        (layout-height (min-by :remainder (layout-nav node))))
+      (apply merge-with + (layout-nav (map layout-height) node)))))
+
+
+;; Apply this to each subtree.
+(defn- layout-height
+  [{:keys [layout/partition
+           layout/magnitude]
+    :as node}]
+  (when node
+    (if (= partition :row)
+      (if magnitude
+        (- magnitude (or (:layout/min-magnitude node) 0))
+        (layout-height (reduce min (layout-nav node))))
+      (reduce + (layout-nav (map layout-height) node)))))
+
+
+
+(def nil-vec
+  (memoize (fn [n] (vec (repeat n nil)))))
+
+
+(defn spread-delta
+  "takes a delta and a vector of remainders and returns a 
+   vector for which the sum is equal to dx * | rs | with 
+   a distribution as uniform as possible given the constraint 
+   that dx_i <= remainder_i. Assumes (> (reduce + rs) dx).
+   
+    ex. 
+    ==> (spread-delta 18 [4 8 8])
+    ==> [4 7 7]
+   
+    ==> (spread-delta 18 [5 8 8])
+    ==> [5 6.5 6.5]
+
+    ==> (spread-delta 18 [4 6 8])
+    ==> [4 6 8]."
+  ([delta remainders]
+   (spread-delta (transient (nil-vec (count remainders)))
+                 delta
+                 (map vector (range) remainders)))
+  ([ret delta remainders]
+   {:pre [(not (empty? remainders))]}
+   (letfn [(into-spread [ret indexed-deltas]
+             (reduce (fn [ret [idx dx]]
+                       (assoc! ret idx dx))
+                     ret
+                     indexed-deltas))]
+     (let [freq    (count remainders)
+           mean-dx (/ delta freq)
+           {rs-below-mean true  rs-above-mean false}
+           (group-by (comp (fn [r] (< r mean-dx)) second) remainders)]
+       (if (empty? rs-below-mean)
+         (persistent! (reduce (fn [ret [idx _]]
+                                (assoc! ret idx mean-dx))
+                              ret
+                              rs-above-mean))
+         (let [adjusted-delta (reduce (fn [d [_ r]] (- d r)) delta rs-below-mean)]
+           (recur (into-spread ret rs-below-mean)
+                   adjusted-delta
+                   rs-above-mean)))))))
+
+
+;; dx = 6
+;; r =  [4 8 8]
+;; ret = [4 7 7]
+
+;; r = [8 4 8]
+;; ret = [7 4 7]
+
+
+
+;; At each node we ask if (+ mag delta) is greater
+;; than the remainder.
+
+;; First, we know at the root whether the delta can
+;; be applied or not. if delta > remainder, then only
+;; the remainder can be applied as the new delta. The
+;; question is how do we spread the delta recursively?
+;; We use the fact that each node knows its remainder.
+;; Each parent tries to spread the delta evenly between
+;; its children. However, some children may not have 
+;; room to accomodate the expected delta. The parent
+;; finds any child for which (+ mag delta) is greater
+;; than the remainder for that child, and first updates
+;; them with delta equal to their remainder. The sum
+;; of these remainders is then subtracted from the delta,
+;; which is then divided between the remaining children.
+;; However, at this point it may be that the sum of the 
+;; remainders of the children is less than their count
+;; divided by the new delta, since they now have to 
+;; proportionally take on more delta because other children
+;; didn't carry their full weight. Thus we must repeat this 
+;; whole process again for the remaining children. We 
+;; do this recursively at each node, giving a time complexity
+;; of O(n^2). Ouch. This can be improved by back propagating the
+;; remainders.
+
+
+
+(defn reduce-height-props
+  [{:keys [layout/magnitude
+           layout/partition]
+    :as node}]
+  (if (= partition :row)
+    (if magnitude
+      {:min-height-remainder (:min-height-remainder node)
+       :layout/height        magnitude
+       :max-height-remainder (:max-height-remainder node)}
+      (apply merge-with min (layout-nav (map reduce-height-props) node)))
+    (apply merge-with + (layout-nav (map reduce-height-props) node))))
+
+
+
+
+(defn reduce-width-props
+  [{:keys [layout/magnitude
+           layout/partition]
+    :as node}]
+  (if (= partition :column)
+    (if magnitude
+      {:min-width-remainder (:min-width-magnitude node)
+       :layout/width        magnitude
+       :max-width-remainder (:min-width-magnitude node)}
+      (apply merge-with min (layout-nav (map reduce-width-props) node)))
+    (apply merge-with + (layout-nav (map reduce-width-props) node))))
+
+
+
+
+(defn calc-remainders
+  [{:keys [layout/partition
+           layout/magnitude
+           layout/min-magnitude
+           layout/max-magnitude]
+    :as node}]
+  (let [children (layout-nav (map calc-remainders) node)]
+    (if (= partition :row)
+      (if magnitude
+        (assoc node
+               :min-height-remainder (- magnitude (or min-magnitude 0))
+               :max-height-remainder (- (or max-magnitude js/Infinity) magnitude)
+               :children children)
+        (-> node
+            (merge (reduce-height-props node))
+            (assoc :children children
+                   :layout/width (transduce (map :layout/width) + children))))
+      (if magnitude
+        (assoc node
+               :min-width-remainder (- magnitude (or min-magnitude 0))
+               :max-width-remainder (- (or max-magnitude js/Infinity) magnitude)
+               :children children)
+        (-> node
+            (merge (reduce-width-props node))
+            (assoc :children children
+                   :layout/height (transduce (map :layout/height) + children)))))))
+
+
+
+
+
+(defn- min-height-remainder
+  [{:keys [layout/partition
+           layout/magnitude]
+    :as node}]
+  (when node
+    (if (= partition :row)
+      (if magnitude
+        (- magnitude (or (:layout/min-magnitude node) js/Infinity))
+        (min-height-remainder (reduce min js/Infinity (layout-nav node))))
+      (reduce + (layout-nav (map min-height-remainder) node)))))
+
+
+
+
+(defn- update-height
+  [{:keys [layout/partition
+           layout/magnitude]
+    :as node}]
+  (when node
+    (if (= partition :row)
+      (if magnitude
+        {:magnitude     magnitude
+         :max-magnitude (or (:layout/max-magnitude node) js/Infinity)
+         :min-magnitude (or (:layout/min-magnitude node) 0)
+         :remainder     (- magnitude (or (:layout/min-magnitude node) 0))}
+        (layout-height (min-by :remainder (layout-nav node))))
+      (apply merge-with + (layout-nav (map layout-height) node)))))
+
+
 
 (defn- width-equations
   ([{:keys [layout/magnitude
@@ -55,7 +268,6 @@
        (if variable? [[node]] [[]])
        (layout-nav (comp (map width-equations) cat) node))
      (product (layout-nav (map width-equations) node)))))
-
 
 
 
@@ -74,7 +286,6 @@
 
 
 
-
 (defn- out-of-bounds?
   [dx {:keys [layout/magnitude
               layout/min-magnitude
@@ -85,21 +296,36 @@
 
 
 
-
+;; We are overcounting the number of terms, since
+;; some equations contain some of the same terms.
 (defn- solve-equations
   [eqs dx]
-  (letfn [(remove-out-of-bounds [eq]
-            (remove (partial out-of-bounds? (/ dx (count eq))) eq))
+  (letfn [(remove-out-of-bounds
+            ([eq] (remove-out-of-bounds [] eq (count eq)))
+            ([ret [term & terms] freq]
+             (cond (nil? term) ret
+
+                   (out-of-bounds? (/ dx freq) term)
+                   (recur ret terms (dec freq))
+                   
+                   :else
+                   (recur (conj ret term) terms freq))))
           (solve-equation [eq]
             (let [freq (count eq)
                   x    (/ dx freq)]
               (mapv (fn [term] (update term :layout/magnitude + x)) eq)))]
-    (into []
-          (comp (map remove-out-of-bounds)
-                (map solve-equation))
-          eqs)))
-
-
+    (transduce (comp (map remove-out-of-bounds)
+                     (fn [rf]
+                       (fn
+                         ([] (rf))
+                         ([ret] (rf ret))
+                         ([ret eq]
+                          (if (empty? eq)
+                            (reduced eqs)
+                            (rf ret eq)))))
+                     (map solve-equation))
+               conj
+               eqs)))
 
 
 (defn- equations->tree
@@ -120,7 +346,7 @@
 
 
 
-(defn- layout-update-width
+(defn layout-update-width
   [node dx]
   (-> (width-equations node)
       (solve-equations dx)
@@ -129,13 +355,12 @@
 
 
 
-
-(defn- layout-update-height
+(defn layout-update-height
   [node dy]
+  (println "remainder" (layout-height node))
   (-> (height-equations node)
       (solve-equations  dy)
       (equations->tree  node)))
-
 
 
 
@@ -151,6 +376,7 @@
 
 (defn- has-parent? [node]
   (>= (count (:path node)) 2))
+
 
 
 
@@ -293,6 +519,13 @@
         (reset! data/state prev-state))
     @data/state))
 
+
+
+
+(defmethod dispatch :pretty-print-state
+  [msg]
+  (pprint @data/state)
+  @data/state)
 
 
 

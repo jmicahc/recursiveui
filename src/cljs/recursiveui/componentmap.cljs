@@ -21,6 +21,7 @@
    :structure/flex-root-action-bar        structure/flex-root-action-bar
    :structure/action-button               structure/action-button
    :structure/button                      structure/button
+   :structure/text-button                 structure/text-button
    :layout/layout-handler                 layout/layout-handler
    :listeners/delete-source               listeners/delete-source
    :listeners/delete-sink                 listeners/delete-sink
@@ -33,6 +34,9 @@
    :sources/layout-resize-bottom          sources/layout-resize-bottom
    :sources/layout-resize-left            sources/layout-resize-left
    :sources/layout-resize-right           sources/layout-resize-right
+   :sources/layout-add-partition          sources/layout-add-partition
+   :sources/pretty-print-state            sources/pretty-print-state
+   :sources/save-state                    sources/save-state
    :sources/resize                        sources/resize
    :sources/drag                          sources/drag
    :targets/drag                          targets/drag

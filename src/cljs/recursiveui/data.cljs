@@ -1,8 +1,12 @@
 (ns recursiveui.data
   (:require [reagent.core :as reagent]
-            [cljs.pprint :refer [pprint]]))
+            [cljs.pprint :refer [pprint]]
+            [cljs.core.async :refer [chan]]))
 
 
+
+
+(def root-channel (chan))
 
 
 (def state
@@ -56,7 +60,9 @@
                               :style/backgroundColor "blue"
                               :children [{:tags #{#_:listeners/delete-action-source
                                                   :structure/action-button}
-                                          :traverse/render? true}]}
+                                          :component/id 40
+                                          :traverse/render? true
+                                          :children [{}]}]}
                              {:tags #{:layout/resizable-flex-column
                                       :listeners/delete-handler
                                       :listeners/duplicate-handler}
@@ -73,9 +79,11 @@
                               :children [{:tags #{:structure/button
                                                   :listeners/delete-source
                                                   #_:listeners/duplicate-action}
+                                          :component/id 30
                                           :traverse/render? true}
                                          {:tags #{:structure/action-button
                                                   :listeners/duplicate-source}
+                                          :component/id 31
                                           :traverse/render? true}
                                          #_{:tags #{:structure/sidebar-left
                                                   :sources/resize
@@ -115,15 +123,9 @@
                               :layout/active? true
                               :layout/variable? true
                               :layout/inner? true
-                              :children [{:tags #{:structure/action-button
-                                                  #_:listeners/delete-action-source}
-                                          :traverse/render? true}
-                                         #_{:tags #{:structure/sidebar-left
-                                                  #_:listeners/layout-resize}
+                              :children [{:tags #{:structure/action-button}
                                           :traverse/render? true}]}]}
-                 {:tags #{#_:structure/flex-row
-                          :layout/resizable-flex-row
-                          #_:listeners/layout-resize-handler}
+                 {:tags #{:layout/resizable-flex-row}
                   :layout/partition :row
                   :component/id 6
                   :element/style {:backgroundColor "orange"}
@@ -136,12 +138,19 @@
                   :children [{:tags #{:structure/action-button
                                       :listeners/undo-source}
                               :traverse/render? true}
-                             #_{:tags #{:structure/sidebar-top
-                                        #_:listeners/layout-resize-source}
-                                :events #{:layout/resize}
-                                :traverse/render? true}]}
+                             {:tags #{:sources/pretty-print-state}
+                              :element/type "button"
+                              :element/inner-html "print state"
+                              :element/style {:position :absolute
+                                              :top "70px"}
+                              :traverse/render? true}
+                             {:tags #{:sources/save-state}
+                              :element/type "button"
+                              :element/inner-html "save state"
+                              :element/style {:position :absolute
+                                              :top "95px"}
+                              :traverse/render? true}]}
                  {:tags #{:layout/resizable-flex-root
-                          #_:layout/resizable-flex-column
                           :layout/column-leaf-decorator
                           :targets/drag
                           :structure/flex-root-action-bar}
@@ -164,12 +173,12 @@
                               :element/style {:backgroundColor "green"}
                               :traverse/render? true
                               :layout/partition :row
-                              :layout/magnitude 100
+                              #_:layout/magnitude #_300
                               :layout/min-magnitude 60
                               :layout/active? true
                               :layout/variable? true
                               :layout/inner? true
-                              :children [{:tags #{:structure/flex-column
+                              :children [{:tags #{:layout/resizable-flex-column
                                                   #_:layout/resizable-flex-column}
                                           :element/style {:backgroundColor "blue"}
                                           :component/id 9
@@ -181,7 +190,62 @@
                                           :layout/magnitude 200
                                           :layout/max-magnitude 800
                                           :layout/min-magnitude 50
-                                          :children [{:tags #{:structure/button}
+                                          :children [{:tags #{:layout/resizable-flex-row}
+                                                      :element/style {:backgroundColor "green"}
+                                                      :traverse/render? true
+                                                      :layout/partition :row
+                                                      :layout/active? true
+                                                      :layout/variable? true
+                                                      :layout/inner? true
+                                                      :layout/magnitude 100
+                                                      :layout/min-magnitude 50
+                                                      :children [#_{:tags #{:layout/resizable-flex-column}
+                                                                  :traverse/render? true
+                                                                  :element/style {:backgroundColor "green"}
+                                                                  :layout/partition :column
+                                                                  :layout/active? true
+                                                                  :layout/variable? true
+                                                                  :layout/inner? true
+                                                                  :layout/magnitude 100
+                                                                  :layout/min-magnitude 50
+                                                                  :children []}
+                                                                 #_{:tags #{:layout/resizable-flex-column}
+                                                                  :traverse/render? true
+                                                                  :element/style {:backgroundColor "green"}
+                                                                  :layout/partition :column
+                                                                  :layout/active? true
+                                                                  :layout/variable? true
+                                                                  :layout/inner? true
+                                                                  :layout/magnitude 100
+                                                                  :layout/min-magnitude 50
+                                                                  :children []}]}
+                                                     
+                                                     {:tags #{:layout/resizable-flex-row}
+                                                      :element/style {:backgroundColor "green"}
+                                                      :component/id 42
+                                                      :traverse/render? true
+                                                      :layout/partition :row
+                                                      :layout/variable? true
+                                                      :layout/active? true
+                                                      :layout/inner? true
+                                                      :layout/magnitude 100
+                                                      :layout/min-magnitude 50
+                                                      :children [{:tags #{:sources/layout-add-partition
+                                                                          :structure/button}
+                                                                  :component/id 44
+                                                                  :traverse/render? true}]}
+                                                     {:tags #{:layout/resizable-flex-row}
+                                                      :element/style {:backgroundColor "green"}
+                                                      :component/id 43
+                                                      :traverse/render? true
+                                                      :layout/partition :row
+                                                      :layout/variable? true
+                                                      :layout/active? true
+                                                      :layout/inner? true
+                                                      :layout/magnitude 100
+                                                      :layout/min-magnitude 50
+                                                      :children []}
+                                                     #_{:tags #{:structure/button}
                                                       :component/id 20
                                                       :traverse/render? true}]}
                                          {:tags #{#_:structure/flex-column
@@ -221,7 +285,7 @@
                               :layout/partition :row
                               :layout/active? true
                               :layout/inner? true
-                              :layout/magnitude 600
+                              :layout/magnitude 400
                               :layout/min-magnitude 60
                               :layout/variable? true
                               :children [{:tags #{#_:structure/sidebar-top
@@ -231,6 +295,32 @@
 
 
 
+(def root-typology (atom {}))
+(def typologies (atom {}))
+
+
+(def to-typology
+  (let [cache (atom {})]
+    (fn [[id children :as arg]]
+      (if-let [value (@cache arg)]
+        value
+        (let [ret {:component/id id
+                   :children children}]
+          (swap! cache assoc arg ret)
+          (swap! typologies assoc id ret)
+          ret)))))
+
+
+
+(defn walk [{:keys [component/id children] :as node}]
+  (if (empty? children) []
+      (to-typology [id (mapv walk children)])))
+
+
+
+(add-watch state :k (fn [_ _ old new]
+                      (swap! root-typology
+                             (fn [typology] (walk new)))))
 
 (def memory
   (atom {:root-timeline []}))

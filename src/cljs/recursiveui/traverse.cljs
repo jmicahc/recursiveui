@@ -27,9 +27,12 @@
 (defn create-element
   [{:keys [element/style
            element/type
-           element/attr]
+           element/attr
+           element/inner-html]
     :as node}]
-  [(or type :div) (assoc attr :style style)])
+  (if inner-html
+    [(or type :div) (assoc attr :style style) inner-html]
+    [(or type :div) (assoc attr :style style)]))
 
 
 

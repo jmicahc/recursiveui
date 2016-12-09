@@ -1,5 +1,5 @@
 (ns recursiveui.structure
-  (:require [recursiveui.element :as elem :refer [tag style attr class]]
+  (:require [recursiveui.element :as elem :refer [tag style attr class conjoin]]
             [cljs.core.async :refer [chan put! <! take!]]
             [goog.events :refer [listen unlisten]]))
 
@@ -8,7 +8,8 @@
 
 
 (defn flex-row
-  [{:keys [layout/magnitude]
+  [{:keys [layout/magnitude
+           component/id]
     :as x}]
   (style x
          :height magnitude
@@ -21,7 +22,8 @@
 
 
 (defn flex-column
-  [{:keys [layout/magnitude]
+  [{:keys [layout/magnitude
+           component/id]
     :as x}]
   (style x
          :width magnitude
@@ -159,3 +161,8 @@
          :bottom 10
          :backgroundColor "brown"
          :position "absolute"))
+
+
+(defn text-button
+  "temporary"
+  [{:keys [element/inner-html] :as x}])
